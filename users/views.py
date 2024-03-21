@@ -4,8 +4,10 @@ from django.shortcuts import render
 
 from django.http import HttpResponse
 
-APP_ID = "111wx28d12404872bd1b8"
-APP_SECRET = "1117b687309c4cae23b0fdc081dbc4e9bcc"
+
+import os
+WX_APPID = os.environ.get('WX_APPID')
+WX_SECRET = os.environ.get('WX_SECRET')
 
 def index(request):
     code = request.GET.get("code")
