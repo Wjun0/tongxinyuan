@@ -16,8 +16,8 @@ def index(request):
 
         from weixin.lib.wxcrypt import WXBizDataCrypt
 
-        api = WXAPPAPI(appid=APP_ID,
-                   app_secret=APP_SECRET)
+        api = WXAPPAPI(appid=WX_APPID,
+                   app_secret=WX_SECRET)
         session_info = api.exchange_code_for_session_key(code=code)
     except Exception as e:
         print(e)
