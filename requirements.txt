@@ -9,11 +9,11 @@ djangorestframework==3.15.1
 drf-yasg==1.21.7
 idna==3.7
 inflection==0.5.1
-mysqlclient==2.2.4
 packaging==24.0
 pycparser==2.22
 pycryptodome==3.20.0
 PyJWT==2.8.0
+PyMySQL==1.1.0
 python-weixin==0.5.0
 pytz==2024.1
 PyYAML==6.0.1
