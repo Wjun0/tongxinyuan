@@ -13,7 +13,7 @@ from .serializers import UserSerizlizers
 
 
 class LoginAPIView(CreateAPIView):
-    serializer_class = None
+    # serializer_class =
 
     def post(self, request, *args, **kwargs):
         code = request.data.get('code')
