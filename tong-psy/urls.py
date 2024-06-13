@@ -20,10 +20,27 @@ from django.contrib.staticfiles.views import serve
 from django.urls import path, include
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from drf_yasg.generators import OpenAPISchemaGenerator
 from rest_framework import permissions
 from django.urls import re_path
 from django.views import static ##新增
 from django.conf import settings ##新增
+from rest_framework.permissions import BasePermission
+
+
+class MyOpenAPISchemaGenerator(OpenAPISchemaGenerator):
+    def get_schema(self, request=None, public=False):
+        schema = super().get_schema(request, public)
+        for path in schema['paths']:
+            if "patch" in schema['paths'][path]:
+                schema['paths'][path].pop("patch")
+        return schema
+
+
+class APIPermission(BasePermission):
+    def has_permission(self, request, view):
+        print(request.data)
+        return True
 
 
 schema_view = get_schema_view(
@@ -36,17 +53,20 @@ schema_view = get_schema_view(
         # contact=openapi.Contact(email='https://qaq.@qq.com',url='https://qaq.com'),   # 联系人信息：邮件、网址
         # license=openapi.License(name='qaq License'),    # 证书
     ),
-    # public=True,    # 是否公开
-    permission_classes=(permissions.AllowAny,)   # 设置用户权限
-
+    public=False,    # 是否公开
+    permission_classes=(APIPermission,),   # 设置用户权限
+    generator_class=MyOpenAPISchemaGenerator,   # 自定义方法，去除patch方法的文档
 )
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}, name='static'),
+    # path(r'api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),   # 互动模式
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),   # 文档模式
     path('auth/', include('apps.users.urls')),
+    path('question/', include('apps.questions.urls')),
 ]
 
 print(urlpatterns)
