@@ -53,8 +53,8 @@ schema_view = get_schema_view(
         # contact=openapi.Contact(email='https://qaq.@qq.com',url='https://qaq.com'),   # 联系人信息：邮件、网址
         # license=openapi.License(name='qaq License'),    # 证书
     ),
-    public=False,    # 是否公开
-    permission_classes=(APIPermission,),   # 设置用户权限
+    public=True,    # 是否公开
+    # permission_classes=(APIPermission,),   # 设置用户权限
     generator_class=MyOpenAPISchemaGenerator,   # 自定义方法，去除patch方法的文档
 )
 
@@ -62,12 +62,11 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}, name='static'),
-    # path(r'api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    re_path(r'^media/(?P<path>.*)$', static.serve, {'document_root': settings.MEDIA_ROOT}, name='media'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),   # 互动模式
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),   # 文档模式
-    path('auth/', include('apps.users.urls')),
+    path('user/', include('apps.users.urls')),
     path('question/', include('apps.questions.urls')),
 ]
 
-print(urlpatterns)
 

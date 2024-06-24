@@ -189,3 +189,10 @@ class UserLoginAPIView(CreateAPIView):
         refresh_token = generate_jwt(user_info, 24)
         return Response({"access_token": access_token, "refresh_token": refresh_token})
 
+
+class UploadMedioAPIView(CreateAPIView):
+
+    def post(self, request, *args, **kwargs):
+
+        return
+

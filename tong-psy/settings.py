@@ -53,36 +53,8 @@ SWAGGER_SETTINGS = {
             'in': 'header',
             'name': 'Authorization'
         },
-    # 'LOGIN_URL': 'rest_framework:login',
-    # 'LOGOUT_URL': 'rest_framework:logout',
     },
 }
-# swagger 配置项
-# SWAGGER_SETTINGS = {
-#     # 基础样式
-#     'SECURITY_DEFINITIONS': {
-#         "basic": {
-#             'type': 'basic'
-#         }
-#     },
-#     # 如果需要登录才能够查看接口文档, 登录的链接使用 restframework 自带的.
-#     'LOGIN_URL': 'rest_framework:login',
-#     'LOGOUT_URL': 'rest_framework:logout',
-#     # 控制API列表的显示方式 None 所有操作均已折叠 list 列出所有操作 full 扩展所有操作
-#     'DOC_EXPANSION': None,
-#     # 是否显示请求标头
-#     'SHOW_REQUEST_HEADERS': True,
-#     # 切换使用Django Auth作为身份验证机制 将其设置为True将会在Swagger UI上显示一个登录/注销按钮，并将csrf_tokens发布到API
-#     'USE_SESSION_AUTH': True,
-#     # 接口文档中方法列表以首字母升序排列
-#     'APIS_SORTER': 'alpha',
-#     # 如果支持json提交, 则接口文档中包含json输入框
-#     'JSON_EDITOR': True,
-#     # 方法列表字母排序
-#     'OPERATIONS_SORTER': 'alpha',
-#     # 在线模式验证器的URL 修改为指向本地安装，或设置None为禁用
-#     'VALIDATOR_URL': None,
-# }
 
 
 MIDDLEWARE = [
@@ -93,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'apps.users.middleware.AuthenticateDocAccess',
 ]
 
 ROOT_URLCONF = 'tong-psy.urls'
@@ -177,6 +150,8 @@ STATIC_ROOT = 'static/'
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
+MEDIA_ROOT = 'media/'
+MEDIA_URL = os.path.join(BASE_DIR, 'media/')
 # print(STATICFILES_DIRS)
 
 # Default primary key field type
