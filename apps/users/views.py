@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import render
@@ -16,6 +18,9 @@ from drf_yasg.utils import swagger_auto_schema
 from .permission import LoginPermission
 from .serializers import UserSerizlizers
 import uuid
+import io
+from django.http import HttpResponse
+from qrcode import make as qrcode_make
 
 
 class RegisterAPIView(CreateAPIView):
@@ -141,7 +146,14 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         obj.save()
         return Response({"message": "success"})
 
-    @swagger_auto_schema(operation_summary="注销|启用 用户")
+    @swagger_auto_schema(operation_summary="注销|启用 用户", request_body=Schema(
+            type=TYPE_OBJECT,
+            properties={
+                'id': Schema(type=TYPE_INTEGER),
+                'name': Schema(type=TYPE_STRING),
+                'status': Schema(type=TYPE_STRING)
+            },
+        ),)
     def put(self, request, *args, **kwargs):
         """
         注销|启用 用户
@@ -190,9 +202,46 @@ class UserLoginAPIView(CreateAPIView):
         return Response({"access_token": access_token, "refresh_token": refresh_token})
 
 
-class UploadMedioAPIView(CreateAPIView):
+class UploadMedioAPIView(CreateAPIView,ListAPIView):
 
+    @swagger_auto_schema(
+        operation_summary="上传视频文件，生成二维码",
+        # operation_description="",
+        request_body=Schema(
+            type=TYPE_OBJECT,
+            properties={
+                'file': Schema(type=TYPE_OBJECT),
+            },
+        ),
+    )
     def post(self, request, *args, **kwargs):
+        file = request.data.get("file")
+        names = file.name.split('.')
+        if names[-1] != "mp4":
+            return Response({"message":"不支持该文件类型！"}, status=400)
+        with open(os.path.join(settings.BASE_DIR, "media/qrcode/qrcode.mp4"), 'wb')as f:
+            f.write(file.read())
+        return Response({"message": "success"})
 
-        return
+    def list(self, request, *args, **kwargs):
+        url = os.path.join(settings.DOMAIN,"/user/qrcode/")
+        # 创建二维码
+        img = qrcode_make(url)
+        # 将二维码图片保存到内存中的图片对象
+        img_buffer = io.BytesIO()
+        img.save(img_buffer)
+        img_bytes = img_buffer.getvalue()
+        # 返回二维码图片
+        return HttpResponse(img_bytes, content_type='image/png')
 
+class QRcodeurlView(ListAPIView):
+    def list(self, request, *args, **kwargs):
+        filename = "media/qrcode/qrcode.mp4"
+        path = os.path.join(settings.BASE_DIR, filename)
+        if not os.path.exists(path):
+            return HttpResponse('File not found.', status=404)
+        # 打开文件
+        with open(path, 'rb') as file:
+            response = HttpResponse(file.read(), content_type='application/octet-stream')
+            response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(path)
+            return response
