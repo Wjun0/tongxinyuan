@@ -30,8 +30,9 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
-WX_APPID = os.environ.get("APPID")   # 申请的微信appid
-WX_SECRET = os.environ.get("SECRET")   # 申请的微信secret
+WX_APPID = os.environ.get("APPID")      # 申请的微信appid
+WX_SECRET = os.environ.get("SECRET")    # 申请的微信secret
+DOMAIN = "https://manage.uat.tong-psy.com"      # 部署域名
 
 INSTALLED_APPS = [
     'django.contrib.admin',

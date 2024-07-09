@@ -103,11 +103,11 @@ class LoginAPIView(CreateAPIView):
 class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
     queryset = User.objects.filter(~Q(role=100))
     serializer_class = UserSerizlizers
-    permission_classes = (LoginPermission, )
+    #permission_classes = (LoginPermission, )
 
     @swagger_auto_schema(
         operation_summary="获取用户列表",
-        operation_description=""
+        operation_description="",
     )
     def get(self, request, *args, **kwargs):
         """
@@ -224,7 +224,7 @@ class UploadMedioAPIView(CreateAPIView,ListAPIView):
         return Response({"message": "success"})
 
     def list(self, request, *args, **kwargs):
-        url = os.path.join(settings.DOMAIN,"/user/qrcode/")
+        url = settings.DOMAIN + "/user/qrcode/"
         # 创建二维码
         img = qrcode_make(url)
         # 将二维码图片保存到内存中的图片对象

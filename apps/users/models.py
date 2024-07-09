@@ -20,3 +20,18 @@ class User(models.Model):
 
     class Meta:
         db_table = "user"
+
+
+class Media(models.Model):
+    id = models.IntegerField(primary_key=True)
+    title = models.CharField(max_length=64, default="", verbose_name="标题")
+    type = models.CharField(max_length=32, default="", verbose_name="类型")
+    name = models.CharField(max_length=64, default="", verbose_name="名称")
+    time_limite = models.CharField(max_length=32, default="", verbose_name="使用限制")
+    start_time = models.DateTimeField(null=True, blank=True, verbose_name="生效时间")
+    end_time = models.DateTimeField(null=True, blank=True, verbose_name="结束时间")
+    desc = models.CharField(max_length=64, default="", verbose_name="描述信息")
+    class Meta:
+        db_table = "tong_media"
+
+
