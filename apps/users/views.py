@@ -20,7 +20,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from .pagenation import ResultsSetPagination
 from .permission import LoginPermission
-from .serializers import UserSerizlizers
+from .serializers import UserSerizlizers, MedaiSerializers
 import uuid
 import io
 from django.http import HttpResponse
@@ -55,7 +55,7 @@ class RegisterAPIView(CreateAPIView):
         if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd):
             return Response({"message": "密码支持文本与字母数字，不超过20字符"}, status=400)
         if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
-            return Response({"message": "电话号码格式不正确！"}, status=400)
+            return Response({"message": "手机号格式不正确！"}, status=400)
         if len(name) > 20:
             return Response({"message": "用户名长度超过20个字符！"}, status=400)
         if len(user_name) > 20:
@@ -73,6 +73,53 @@ class RegisterAPIView(CreateAPIView):
         user_id = "PC_" + str(uuid.uuid4())
         cre = self.get_queryset().create(user_id=user_id, name=name, user_name=user_name, password=pwd, mobile=mobile, status="checking")
         return Response({"message": "注册成功，请等待管理员审核"})
+
+
+class UserAddAPIView(CreateAPIView):
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        name = data.get('name', '')
+        user_name = data.get('user_name', '')
+        pwd = data.get('password', '')
+        email = data.get('email', '')
+        role = data.get('role')
+        tag = data.get('tag')
+        start_time = data.get('start_time', '')
+        end_time = data.get('end_time', '')
+        if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(name):
+            return Response({"message": "用户名支持文本与字母数字，不超过20字符"}, status=400)
+        if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd):
+            return Response({"message": "密码支持文本与字母数字，不超过20字符"}, status=400)
+        # if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
+        #     return Response({"message": "电话号码格式不正确！"}, status=400)
+        if len(name) > 20:
+            return Response({"message": "用户名长度超过20个字符！"}, status=400)
+        if len(user_name) > 20:
+            return Response({"message": "姓名长度超过20个字符！"}, status=400)
+        if len(pwd) > 20:
+            return Response({"message": "密码长度超过20个字符！"}, status=400)
+        if len(pwd) < 6:
+            return Response({"message": "密码长度少于6个字符！"}, status=400)
+        if tag not in [0,1]:
+            return Response({"message": "tag 参数错误！"}, status=400)
+        user = User.objects.filter(~Q(role=100)).filter(Q(name=name))
+        if user:
+            return Response({"message": "用户名已被占用！"},status=400)
+        if role:
+            if role not in [1,2,3]:
+                return Response({"message": "不支持勾选该权限！"}, status=400)
+        user_id = "PC_" + str(uuid.uuid4())
+        try:
+            if tag == 1:
+                User.objects.create(user_id=user_id, name=name, user_name=user_name, email=email, password=pwd,
+                                    status="used", tag=tag)
+            else:
+                User.objects.create(user_id=user_id, name=name,user_name=user_name, email=email, password=pwd,
+                                    status="pending", tag=tag, start_time=start_time, end_time=end_time)
+        except Exception as e:
+            return Response({"message": f"添加用户异常！{e}"},status=400)
+        return Response({"message": "添加用户成功！"})
 
 
 class LoginAPIView(CreateAPIView):
@@ -195,7 +242,7 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
         name = data.get('name', '')
         user_name = data.get('user_name', '')
         role = data.get('role', '')
-        mobile = data.get('mobile', '')
+        email = data.get('email', '')
         tag = data.get('tag')
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
@@ -209,10 +256,12 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
             if len(name) > 20:
                 return Response({"message": "用户名长度超过20个字符！"}, status=400)
             obj.name = name
-        if mobile:
-            if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
-                return Response({"message": "电话号码格式不正确！"}, status=400)
-            obj.mobile = mobile
+        # if mobile:
+        #     if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
+        #         return Response({"message": "电话号码格式不正确！"}, status=400)
+        #     obj.mobile = mobile
+        if email:
+            obj.email = email
         if user_name:
             if len(user_name) > 20:
                 return Response({"message": "姓名长度超过20个字符！"}, status=400)
@@ -221,7 +270,7 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
             if role not in [1,2,3]:
                 return Response({"message": "不支持勾选该权限！"}, status=400)
             obj.role = role
-        if tag:
+        if tag == 1:
             obj.tag = 1
         if start_time and end_time:
             obj.tag = 0
@@ -246,6 +295,7 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         user_id = data.get('user_id', '')
         name = data.get('name', '')
         role = data.get('role', '')
+        tag = data.get('tag')
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
         # todo 审核人员不能审核管理员
@@ -256,14 +306,14 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         if obj.status != "checking":
             return Response({"message": "用户状态不是待审核！"}, status=400)
         obj.role = role
-        if start_time and end_time:
+        if tag == 1:
+            obj.status = "used"
+            obj.tag = 1
+        else:
             obj.status = "pending"
             obj.tag = 0
             obj.start_time = start_time
             obj.end_time = end_time
-        else:
-            obj.status = "used"
-            obj.tag = 1
         try:
             obj.save()
         except Exception as e:
@@ -284,11 +334,10 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         """
         data = request.data
         user_id = data.get('user_id', '')
-        name = data.get('name', '')
         status = data.get('status', '')
         if status not in ['used', "pending", 'deleted']:
             return Response({"message": "不支持选择该状态！"}, status=400)
-        obj = get_object_or_404(self.get_queryset(), user_id=user_id, name=name)
+        obj = get_object_or_404(self.get_queryset(), user_id=user_id)
         if obj.status not in ['used', "pending", 'deleted']:
             return Response({"message": "该数据状态不支持修改！"}, status=400)
         if obj.status == "deleted" and status != "used":
@@ -371,7 +420,7 @@ class UploadMedioAPIView(CreateAPIView,ListAPIView):
         end_time = data.get('end_time', '')
         desc = data.get('desc', '')
         names = file.name.split('.')
-        if names[-1] not in ["mp4", "mp3", ""]:
+        if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
             return Response({"message":"不支持该文件类型！"}, status=400)
         file_path = f"{str(uuid.uuid4())}.{names[-1]}"
         with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
@@ -380,17 +429,6 @@ class UploadMedioAPIView(CreateAPIView,ListAPIView):
                     time_limite=time_limite, start_time=start_time, end_time=end_time, desc=desc)
         return Response({"message": "success", "url": settings.DOMAIN + "user/download/" + file_path})
 
-
-    def list(self, request, *args, **kwargs):
-        url = settings.DOMAIN + "/user/qrcode/"
-        # 创建二维码
-        img = qrcode_make(url)
-        # 将二维码图片保存到内存中的图片对象
-        img_buffer = io.BytesIO()
-        img.save(img_buffer)
-        img_bytes = img_buffer.getvalue()
-        # 返回二维码图片
-        return HttpResponse(img_bytes, content_type='image/png')
 
 class QRcodeurlView(APIView):
 
@@ -405,3 +443,17 @@ class QRcodeurlView(APIView):
             response = HttpResponse(file.read(), content_type='application/octet-stream')
             response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(path)
             return response
+
+class ChechUserAPIView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        name = request.query_params.get("name")
+        users = User.objects.filter(~Q(role=100)).filter(name=name)
+        if users:
+            return Response({"is_used": True})
+        return Response({"is_used": False})
+
+
+class MediaListAPIView(ListAPIView):
+    serializer_class = MedaiSerializers
+    queryset = Media.objects.all()
