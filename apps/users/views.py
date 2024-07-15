@@ -19,7 +19,8 @@ from .models import User, Media
 from drf_yasg.utils import swagger_auto_schema
 
 from .pagenation import ResultsSetPagination
-from .permission import LoginPermission
+from .permission import LoginPermission, idAdminAndCheckerPermission
+from .permission_utils import user_is_checker
 from .serializers import UserSerizlizers, MedaiSerializers
 import uuid
 import io
@@ -76,6 +77,7 @@ class RegisterAPIView(CreateAPIView):
 
 
 class UserAddAPIView(CreateAPIView):
+    permission_classes = (idAdminAndCheckerPermission, )
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -167,6 +169,7 @@ class LoginAPIView(CreateAPIView):
 class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
     serializer_class = UserSerizlizers
     pagination_class = ResultsSetPagination
+    permission_classes = (idAdminAndCheckerPermission, )
 
     def get_queryset(self):
         queryset = User.objects.filter(~Q(role=100))
@@ -216,6 +219,8 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
         user = User.objects.filter(~Q(role=100)).filter(user_id=user_id).first()
         if not user:
             return Response({})
+        if user_is_checker and user.role == 1: # 审核人员你能修改管理员数据
+            return Response({"message": "不支持操作管理员数据！"}, status=403)
         return Response({"user_name": user.user_name, "name":user.name, "mobile":user.mobile,
                          "role": user.role, "tag": user.tag,"start_time": user.start_time, "end_time": user.end_time})
 
@@ -260,6 +265,8 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
         #     if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
         #         return Response({"message": "电话号码格式不正确！"}, status=400)
         #     obj.mobile = mobile
+        if user_is_checker and obj.role == 1: # 审核人员你能修改管理员数据
+            return Response({"message": "不支持操作管理员数据！"}, status=403)
         if email:
             obj.email = email
         if user_name:
@@ -289,7 +296,8 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
     filterset_class = UserListerFilter
     queryset = User.objects.filter(~Q(role=100))
     serializer_class = UserSerizlizers
-    #permission_classes = (LoginPermission, )
+    permission_classes = (idAdminAndCheckerPermission, )
+
     def create(self, request, *args, **kwargs):
         data = request.data
         user_id = data.get('user_id', '')
@@ -298,13 +306,13 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         tag = data.get('tag')
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
-        # todo 审核人员不能审核管理员
-
         if role not in [1,2,3]:
             return Response({"message": "不支持勾选该权限！"}, status=400)
         obj = get_object_or_404(self.get_queryset(), user_id=user_id, name=name)
         if obj.status != "checking":
             return Response({"message": "用户状态不是待审核！"}, status=400)
+        if user_is_checker and obj.role == 1:  # 审核人员你能修改管理员数据
+            return Response({"message": "不支持操作管理员数据！"}, status=403)
         obj.role = role
         if tag == 1:
             obj.status = "used"
@@ -344,12 +352,15 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
             return Response({"message": "只能启用已注销用户！"}, status=400)
         if status == "deleted" and obj.status not in ["used", "pending"]:
             return Response({"message": "只能注销待生效和生效中的用户！"}, status=400)
+        if user_is_checker and obj.role == 1: # 审核人员你能修改管理员数据
+            return Response({"message": "不支持操作管理员数据！"}, status=403)
         obj.status = status
         obj.save()
         return Response({"message": "success"})
 
 
 class UserPermissionAPIView(APIView):
+    permission_classes = (LoginPermission,)
 
     @swagger_auto_schema(operation_summary="获取用户权限")
     def get(self, request, *args, **kwargs):
@@ -363,7 +374,6 @@ class UserPermissionAPIView(APIView):
             return Response({"role": 500, "rule": rule},)
         except Exception as e:
             return Response({"message": "permission deny! "}, status=403)
-
 
 
 class UserLoginAPIView(CreateAPIView):
@@ -399,6 +409,7 @@ class UserLoginAPIView(CreateAPIView):
 
 
 class UploadMedioAPIView(CreateAPIView,ListAPIView):
+    permission_classes = (idAdminAndCheckerPermission, )
 
     @swagger_auto_schema(
         operation_summary="上传视频文件",
@@ -423,15 +434,23 @@ class UploadMedioAPIView(CreateAPIView,ListAPIView):
         if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
             return Response({"message":"不支持该文件类型！"}, status=400)
         file_path = f"{str(uuid.uuid4())}.{names[-1]}"
-        with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
-            f.write(file.read())
-        cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path,
-                    time_limite=time_limite, start_time=start_time, end_time=end_time, desc=desc)
-        return Response({"message": "success", "url": settings.DOMAIN + "user/download/" + file_path})
+        try:
+            with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
+                f.write(file.read())
+            if time_limite == 1:
+                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path,
+                                           time_limite=time_limite, desc=desc)
+            else:
+                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path,
+                            time_limite=time_limite, start_time=start_time, end_time=end_time, desc=desc)
+            return Response({"message": "success", "url": settings.DOMAIN + "user/download/" + file_path})
+        except Exception as e:
+            return Response({"message": f"bad request! {e}"})
+
 
 
 class QRcodeurlView(APIView):
-
+    permission_classes = (idAdminAndCheckerPermission, )
     def get(self, request, *args, **kwargs):
         file_name = kwargs.get('file_name')
         filename = f"media/qrcode/{file_name}"
@@ -455,5 +474,7 @@ class ChechUserAPIView(APIView):
 
 
 class MediaListAPIView(ListAPIView):
+    permission_classes = (idAdminAndCheckerPermission, )
+    pagination_class = ResultsSetPagination
     serializer_class = MedaiSerializers
-    queryset = Media.objects.all()
+    queryset = Media.objects.order_by("-id")
