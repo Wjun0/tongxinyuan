@@ -9,7 +9,7 @@ class UserSerizlizers(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('user_id', 'name', 'mobile', 'role', 'create_time', 'status')
+        fields = ('user_id', 'name', "user_name", 'check_user', 'mobile', 'role', 'create_time', 'status')
 
 class MedaiSerializers(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()

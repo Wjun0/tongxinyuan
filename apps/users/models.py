@@ -10,6 +10,7 @@ class User(models.Model):
     user_id = models.CharField(max_length=64, default='', verbose_name="用户ID", unique=True)
     name = models.CharField(max_length=32, default='', verbose_name="用户名")
     user_name = models.CharField(max_length=32, default='', verbose_name="姓名")
+    check_user = models.CharField(max_length=32, default='', verbose_name="审核人")
     mobile = models.CharField(max_length=32, default='', verbose_name="手机号码")
     email = models.CharField(max_length=32, default='', verbose_name="邮箱")
     password = models.CharField(max_length=64, default='', verbose_name="密码")
@@ -38,5 +39,15 @@ class Media(models.Model):
     desc = models.CharField(max_length=64, default="", verbose_name="描述信息")
     class Meta:
         db_table = "tong_media"
+
+
+
+class CheckEmailCode(models.Model):
+    id = models.AutoField(primary_key=True)
+    email = models.CharField(max_length=64, default="", verbose_name="邮箱")
+    code = models.CharField(max_length=12, default="", verbose_name="验证码")
+    time = models.DateTimeField(auto_now=True, null=True, verbose_name="创建时间")
+    class Meta:
+        db_table = "tong_check_code"
 
 
