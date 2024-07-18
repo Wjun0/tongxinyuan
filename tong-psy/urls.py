@@ -58,6 +58,12 @@ schema_view = get_schema_view(
     generator_class=MyOpenAPISchemaGenerator,   # 自定义方法，去除patch方法的文档
 )
 
+# ==================更正数据===============
+from apps.users.tests import update_table
+update_table()
+# ========================================
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -68,6 +74,5 @@ urlpatterns = [
     path('user/', include('apps.users.urls')),
     path('question/', include('apps.questions.urls')),
 ]
-
 
 

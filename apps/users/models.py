@@ -29,6 +29,7 @@ class User(models.Model):
 
 class Media(models.Model):
     id = models.AutoField(primary_key=True)
+    file_id = models.CharField(max_length=64, default="", unique=True, verbose_name="文件id")
     title = models.CharField(max_length=64, default="", verbose_name="标题")
     name = models.CharField(max_length=64, default="", verbose_name="文件名称")
     type = models.CharField(max_length=32, default="", verbose_name="文件类型")

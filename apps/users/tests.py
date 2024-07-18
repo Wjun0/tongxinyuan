@@ -1,13 +1,15 @@
-from django.test import TestCase
-
-# Create your tests here.
 import os
+import sys
+from pathlib import Path
 
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tong-psy.settings')
-import re, uuid
-from django.utils import timezone
-from utils.generate_jwt import generate_jwt, jwt_decode
 
-token = generate_jwt({"user_id": "12345"}, 1)
-jwt_decode(token)
+from apps.users.models import Media
+
+def update_table():
+    meds = Media.objects.filter(file_id="")
+    for i in meds:
+        if not i.path:
+            i.file_id = i.id
+        i.file_id = i.path.split('.')[0]
+        i.save()

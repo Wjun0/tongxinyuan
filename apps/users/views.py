@@ -99,8 +99,8 @@ class UserAddAPIView(CreateAPIView):
         user_name = data.get('user_name', '')
         pwd = data.get('password', '')
         email = data.get('email', '')
-        role = data.get('role')
-        tag = data.get('tag')
+        role = data.get('role', '')
+        tag = data.get('tag', '')
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
         if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(name):
@@ -368,7 +368,7 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         if user_is_checker and obj.role == 1:  # 审核人员你能修改管理员数据
             return Response({"detail": "不支持操作管理员数据！"}, status=403)
         obj.role = role
-        if tag == 1:
+        if int(tag) == 1:
             obj.status = "used"
             obj.tag = 1
         else:
@@ -487,17 +487,18 @@ class UploadMedioAPIView(CreateAPIView,ListAPIView):
         names = file.name.split('.')
         if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
             return Response({"detail":"不支持该文件类型！"}, status=400)
-        file_path = f"{str(uuid.uuid4())}.{names[-1]}"
+        file_id = str(uuid.uuid4())
+        file_path = f"{file_id}.{names[-1]}"
         try:
             with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
                 f.write(file.read())
-            if time_limite == 1:
-                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path,
+            if int(time_limite) == 1:
+                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, file_id=file_id,
                                            time_limite=time_limite, desc=desc)
             else:
-                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path,
+                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, file_id=file_id,
                             time_limite=time_limite, start_time=start_time, end_time=end_time, desc=desc)
-            return Response({"detail": "success", "url": settings.DOMAIN + "user/download/" + file_path})
+            return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
         except Exception as e:
             return Response({"detail": f"bad request! {e}"})
 
@@ -506,11 +507,14 @@ class UploadMedioAPIView(CreateAPIView,ListAPIView):
 class QRcodeurlView(APIView):
     permission_classes = (idAdminAndCheckerPermission, )
     def get(self, request, *args, **kwargs):
-        file_name = kwargs.get('file_name')
-        filename = f"media/qrcode/{file_name}"
+        file_id = kwargs.get('file_id')
+        f = Media.objects.filter(file_id=file_id).first()
+        if not f:
+            return Response({"detail": "File not found."}, status=404)
+        filename = f"media/qrcode/{f.path}"
         path = os.path.join(settings.BASE_DIR, filename)
         if not os.path.exists(path):
-            return HttpResponse('File not found.', status=404)
+            return Response({"detail": "File not found."}, status=404)
         # 打开文件
         with open(path, 'rb') as file:
             response = HttpResponse(file.read(), content_type='application/octet-stream')
@@ -563,5 +567,72 @@ class MediaListAPIView(ListAPIView):
     pagination_class = ResultsSetPagination
     serializer_class = MedaiSerializers
     queryset = Media.objects.order_by("-id")
+
+
+class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
+    permission_classes = (idAdminAndCheckerPermission, )
+    serializer_class = MedaiSerializers
+    queryset = Media.objects.order_by("-id")
+
+    def list(self, request, *args, **kwargs):
+        file_id = request.query_params.get("file_id")
+        f = self.get_queryset().filter(file_id=file_id).first()
+        if not f:
+            return Response({"detail": "File not found."}, status=404)
+        ser = self.get_serializer(f)
+        return Response(ser.data)
+
+
+    def create(self, request, *args, **kwargs):
+        file = request.data.get("file")
+        data = request.data
+        time_limite = data.get('time_limite', '')
+        start_time = data.get('start_time', '')
+        end_time = data.get('end_time', '')
+        file_id = data.get('file_id', '')
+        names = file.name.split('.')
+        if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm",
+                             "svcd", "vcd"]:
+            return Response({"detail": "不支持该文件类型！"}, status=400)
+
+        obj = self.get_queryset().filter(file_id=file_id).first()
+        if not obj:
+            return Response({"detail": "File not found."}, status=404)
+        file_path = f"{obj.file_id}.{names[-1]}"
+        try:
+            with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
+                f.write(file.read())
+            obj.name = file.name
+            obj.path = file_path
+            if str(time_limite) == "1":
+                obj.time_limite = time_limite
+            else:
+                obj.time_limite = 0
+                obj.start_time = start_time
+                obj.end_time = end_time
+            obj.save()
+            return Response({"detail": "success"})
+        except Exception as e:
+            return Response({"detail": "bad request !"}, status=400 )
+
+
+    def put(self, request, *args, **kwargs):
+        data = request.data
+        time_limite = data.get('time_limite', '')
+        start_time = data.get('start_time', '')
+        end_time = data.get('end_time', '')
+        file_id = data.get('file_id', '')
+        obj = self.get_queryset().filter(file_id=file_id).first()
+        if not obj:
+            return Response({"detail": "File not found."}, status=404)
+        if time_limite == 1:
+            obj.time_limite = time_limite
+        else:
+            obj.time_limite = 0
+            obj.start_time = start_time
+            obj.end_time = end_time
+        obj.save()
+        return Response({"detail": "success"})
+
 
 
