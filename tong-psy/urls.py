@@ -14,6 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import datetime
+
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.staticfiles.views import serve
@@ -59,10 +61,18 @@ schema_view = get_schema_view(
 )
 
 # ==================更正数据===============
-from apps.users.tests import update_table
-update_table()
+#from apps.users.tests import update_table
+# update_table()
 # ========================================
 
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+
+from utils.schedule_utils import update_user_status
+sche = BackgroundScheduler()
+sche.add_job(update_user_status, trigger=CronTrigger(second="*/30"), max_instances=2)  # 30秒执行一次
+sche.start()
 
 
 urlpatterns = [

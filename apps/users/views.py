@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import random
 
@@ -29,6 +30,8 @@ from django.utils import timezone
 import io
 from django.http import HttpResponse
 from qrcode import make as qrcode_make
+
+from .utils import token_to_name
 
 
 class RegisterAPIView(CreateAPIView):
@@ -119,17 +122,17 @@ class UserAddAPIView(CreateAPIView):
             return Response({"detail": "密码长度超过20个字符！"}, status=400)
         if len(pwd) < 6:
             return Response({"detail": "密码长度少于6个字符！"}, status=400)
-        if tag not in [0,1]:
+        if tag not in ["0", "1"]:
             return Response({"detail": "tag 参数错误！"}, status=400)
         user = User.objects.filter(~Q(role=100)).filter(Q(name=name))
         if user:
             return Response({"detail": "用户名已被占用！"},status=400)
         if role:
-            if role not in [1,2,3]:
+            if role not in ["1", "2", "3"]:
                 return Response({"detail": "不支持勾选该权限！"}, status=400)
         user_id = "PC_" + str(uuid.uuid4())
         try:
-            if tag == 1:
+            if str(tag) == "1":
                 User.objects.create(user_id=user_id, name=name, user_name=user_name, email=email, password=pwd,
                                     status="used", role=role, tag=tag)
             else:
@@ -328,10 +331,10 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
                 return Response({"detail": "姓名长度超过20个字符！"}, status=400)
             obj.user_name = user_name
         if role:
-            if role not in [1,2,3]:
+            if role not in ["1", "2", "3"]:
                 return Response({"detail": "不支持勾选该权限！"}, status=400)
-            obj.role = role
-        if tag == 1:
+            obj.role = int(role)
+        if str(tag) == "1":
             obj.tag = 1
         if start_time and end_time:
             obj.tag = 0
@@ -357,18 +360,23 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         user_id = data.get('user_id', '')
         name = data.get('name', '')
         role = data.get('role', '')
-        tag = data.get('tag')
+        tag = data.get('tag', '')
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
-        if role not in [1,2,3]:
+        status = data.get('status', '')
+        if role not in ["1" ,"2" ,"3"]:
             return Response({"detail": "不支持勾选该权限！"}, status=400)
         obj = get_object_or_404(self.get_queryset(), user_id=user_id, name=name)
         if obj.status != "checking":
             return Response({"detail": "用户状态不是待审核！"}, status=400)
         if user_is_checker and obj.role == 1:  # 审核人员你能修改管理员数据
             return Response({"detail": "不支持操作管理员数据！"}, status=403)
-        obj.role = role
-        if int(tag) == 1:
+        if status == "deny":
+            obj.status = status
+            obj.status()
+            return Response({"detail": "success !"})
+        obj.role = int(role)
+        if str(tag) == "1":
             obj.status = "used"
             obj.tag = 1
         else:
@@ -462,7 +470,7 @@ class UserLoginAPIView(CreateAPIView):
         return Response({"access_token": access_token, "refresh_token": refresh_token})
 
 
-class UploadMedioAPIView(CreateAPIView,ListAPIView):
+class UploadMedioAPIView(CreateAPIView):
     permission_classes = (idAdminAndCheckerPermission, )
 
     @swagger_auto_schema(
@@ -487,21 +495,47 @@ class UploadMedioAPIView(CreateAPIView,ListAPIView):
         names = file.name.split('.')
         if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
             return Response({"detail":"不支持该文件类型！"}, status=400)
+
         file_id = str(uuid.uuid4())
         file_path = f"{file_id}.{names[-1]}"
+        u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
         try:
             with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
                 f.write(file.read())
-            if int(time_limite) == 1:
-                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, file_id=file_id,
-                                           time_limite=time_limite, desc=desc)
+            if str(time_limite) == "1":
+                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, user=u_name,
+                                           file_id=file_id, time_limite=time_limite, desc=desc)
+
             else:
-                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, file_id=file_id,
+                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, file_id=file_id, user=u_name,
                             time_limite=time_limite, start_time=start_time, end_time=end_time, desc=desc)
             return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
         except Exception as e:
             return Response({"detail": f"bad request! {e}"})
 
+
+class UploadLogoAPIView(CreateAPIView):
+    # permission_classes = (idAdminAndCheckerPermission,)
+    queryset = Media.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        file = request.data.get("file")
+        data = request.data
+        file_id = data.get('file_id', '')
+        names = file.name.split('.')
+        if names[-1] not in ["png", "jpg"]:
+            return Response({"detail": "不支持该文件类型！"}, status=400)
+        obj = self.get_queryset().filter(file_id=file_id).first()
+        if not obj:
+            return Response({"detail": "File not found !"}, status=400)
+        uid = str(uuid.uuid4())
+        file_path = f"{uid}.{names[-1]}"
+        with open(os.path.join(settings.BASE_DIR, "media", "logo", file_path), 'wb')as f:
+            f.write(file.read())
+        obj.logo_id = uid
+        obj.logo_name = file_path
+        obj.save()
+        return Response({"detail": "success ", "logo_id": uid, "url": settings.DOMAIN + "/user/download_logo/" + uid})
 
 
 class QRcodeurlView(APIView):
@@ -517,9 +551,28 @@ class QRcodeurlView(APIView):
             return Response({"detail": "File not found."}, status=404)
         # 打开文件
         with open(path, 'rb') as file:
-            response = HttpResponse(file.read(), content_type='application/octet-stream')
+            response = HttpResponse(file.read(), content_type=mimetypes.guess_type(path)[0])
             response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(path)
             return response
+
+class DownloadLogoView(APIView):
+    # permission_classes = (idAdminAndCheckerPermission,)
+
+    def get(self, request, *args, **kwargs):
+        logo_id = kwargs.get('logo_id')
+        f = Media.objects.filter(logo_id=logo_id).first()
+        if not f:
+            return Response({"detail": "File not found."}, status=404)
+        filename = f"media/logo/{f.logo_name}"
+        path = os.path.join(settings.BASE_DIR, filename)
+        if not os.path.exists(path):
+            return Response({"detail": "File not found."}, status=404)
+        # 打开文件
+        with open(path, 'rb') as file:
+            response = HttpResponse(file.read(), content_type=mimetypes.guess_type(path)[0])
+            response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(path)
+            return response
+
 
 class ChechUserAPIView(APIView):
 
@@ -625,7 +678,7 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         obj = self.get_queryset().filter(file_id=file_id).first()
         if not obj:
             return Response({"detail": "File not found."}, status=404)
-        if time_limite == 1:
+        if str(time_limite) == "1":
             obj.time_limite = time_limite
         else:
             obj.time_limite = 0

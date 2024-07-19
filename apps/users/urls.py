@@ -10,7 +10,9 @@ urlpatterns = [
     re_path(r'userList/$', views.UserAPIView.as_view()),          # 用户列表
     re_path(r'^userAudit/$', views.UserAuditAPIView.as_view()),     # 审核用户
     re_path(r'^upload/$', views.UploadMedioAPIView.as_view()),      # 上传音频生成二维码
-    path('download/<file_id>/', views.QRcodeurlView.as_view()),       # 返回二维码内容
+    re_path(r'^uploadLogo/$', views.UploadLogoAPIView.as_view()),      # 上传封面
+    path('download/<file_id>/', views.QRcodeurlView.as_view()),       # 下载音频|视频
+    path('download_logo/<logo_id>/', views.DownloadLogoView.as_view()),    # 下载二维码
     re_path(r'^mediaList/$', views.MediaListAPIView.as_view()),         # 返回上传文件列表
     re_path(r'^mediaDetail/$', views.MediaDetailAPIView.as_view()),         # 文件详情
     re_path(r'^userPermission/$', views.UserPermissionAPIView.as_view()),  # 返回用户权限信息
