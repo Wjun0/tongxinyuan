@@ -6,6 +6,7 @@ urlpatterns = [
     re_path(r'userAdd/$', views.UserAddAPIView.as_view()),      # 添加用
     re_path(r'login/$', views.LoginAPIView.as_view()),          # 后台登录
     re_path(r'logout/$', views.LogoutAPIView.as_view()),         # 退出
+    re_path(r'reflush/$', views.ReflushAPIView.as_view()),        # 刷新token
     re_path(r'forgetPwd/$', views.ForgetPdAPIView.as_view()),    # 忘记密码
     re_path(r'userList/$', views.UserAPIView.as_view()),          # 用户列表
     re_path(r'^userAudit/$', views.UserAuditAPIView.as_view()),     # 审核用户

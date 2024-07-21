@@ -14,7 +14,7 @@ class LoginPermission(BasePermission):
             data = jwt_decode(token)
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id'), token=token).first()
             now = timezone.now()
-            if obj.token_exp + datetime.timedelta(minutes=30) > now:
+            if obj.token_exp + datetime.timedelta(hours=24) > now:
                 # if obj.start_time < now < obj.end_time and obj.status == "used":
                 if obj.status == "used":
                     return True
@@ -30,7 +30,7 @@ class isAdminPermission(BasePermission):
             data = jwt_decode(token)
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id'), token=token, role=1).first()
             now = timezone.now()
-            if obj.token_exp + datetime.timedelta(minutes=30) > now:
+            if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
                     return True
             return False
@@ -46,7 +46,7 @@ class isCheckerPermission(BasePermission):
             data = jwt_decode(token)
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id'), token=token, role=2).first()
             now = timezone.now()
-            if obj.token_exp + datetime.timedelta(minutes=30) > now:
+            if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
                     return True
             return False
@@ -61,7 +61,7 @@ class isOperatorPermission(BasePermission):
             data = jwt_decode(token)
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id'), token=token, role=3).first()
             now = timezone.now()
-            if obj.token_exp + datetime.timedelta(minutes=30) > now:
+            if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
                     return True
             return False
@@ -78,7 +78,7 @@ class idAdminAndCheckerPermission(BasePermission):
             data = jwt_decode(token)
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id'), token=token).filter(Q(role=1) | Q(role=2)).first()
             now = timezone.now()
-            if obj.token_exp + datetime.timedelta(minutes=30) > now:
+            if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
                     return True
             return False
@@ -94,7 +94,7 @@ class isManagementPermission(BasePermission):
             data = jwt_decode(token)
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id', token=token), role__lte=3).first()
             now = timezone.now()
-            if obj.token_exp + datetime.timedelta(minutes=30) > now:
+            if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
                     return True
             return False

@@ -15,7 +15,7 @@ class MedaiSerializers(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
 
     def get_url(self, instance):
-        return settings.DOMAIN + "user/download/" + instance.file_id
+        return settings.DOMAIN + "/user/download/" + instance.file_id
 
     class Meta:
         model = Media

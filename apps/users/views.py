@@ -175,7 +175,7 @@ class LoginAPIView(CreateAPIView):
 
         if obj.password == pwd:
             data = {"user_id": obj.user_id, "iat": time.time()}
-            access_token = generate_jwt(data, 1)
+            access_token = generate_jwt(data, 24)
             refresh_token = generate_jwt(data, 24)
             obj.token = access_token
             obj.exp_time = datetime.datetime.now()
@@ -193,6 +193,24 @@ class LogoutAPIView(APIView):
         obj.token = "delete"
         obj.save()
         return Response({"detail": "logout success !"})
+
+class ReflushAPIView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        token = request.META.get('HTTP_AUTHORIZATION')
+        data = jwt_decode(token)
+        try:
+            obj = User.objects.filter(user_id=data.get("data", {}).get('user_id')).first()
+            data = {"user_id": obj.user_id, "iat": time.time()}
+            access_token = generate_jwt(data, 1)
+            refresh_token = generate_jwt(data, 24)
+            obj.token = access_token
+            obj.exp_time = datetime.datetime.now()
+            obj.save()
+            return Response({"detail": "ok", "code": 200,
+                 "data": {"access_token": access_token, "refresh_token": refresh_token}})
+        except Exception as e:
+            return Response({"detail": "bad request"}, status=400)
 
 
 class ForgetPdAPIView(CreateAPIView):
@@ -276,7 +294,7 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
         user = User.objects.filter(~Q(role=100)).filter(user_id=user_id).first()
         if not user:
             return Response({})
-        if user_is_checker and user.role == 1: # 审核人员你能修改管理员数据
+        if user_is_checker(request) and user.role == 1: # 审核人员你能修改管理员数据
             return Response({"detail": "不支持操作管理员数据！"}, status=403)
         return Response({"user_name": user.user_name, "name":user.name, "mobile":user.mobile, "email": user.email,
                          "role": user.role, "tag": user.tag,"start_time": user.start_time, "end_time": user.end_time})
@@ -322,7 +340,7 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
         #     if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
         #         return Response({"detail": "电话号码格式不正确！"}, status=400)
         #     obj.mobile = mobile
-        if user_is_checker and obj.role == 1: # 审核人员你能修改管理员数据
+        if user_is_checker(request) and obj.role == 1: # 审核人员你能修改管理员数据
             return Response({"detail": "不支持操作管理员数据！"}, status=403)
         if email:
             obj.email = email
@@ -336,10 +354,10 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
             obj.role = int(role)
         if str(tag) == "1":
             obj.tag = 1
-        if start_time and end_time:
-            obj.tag = 0
             obj.start_time = start_time
             obj.end_time = end_time
+        if start_time and end_time:
+            obj.tag = 0
         try:
             obj.save()
         except Exception as e:
@@ -369,7 +387,7 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         obj = get_object_or_404(self.get_queryset(), user_id=user_id, name=name)
         if obj.status != "checking":
             return Response({"detail": "用户状态不是待审核！"}, status=400)
-        if user_is_checker and obj.role == 1:  # 审核人员你能修改管理员数据
+        if user_is_checker(request) and obj.role == 1:  # 审核人员你能修改管理员数据
             return Response({"detail": "不支持操作管理员数据！"}, status=403)
         if status == "deny":
             obj.status = status
@@ -379,11 +397,11 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         if str(tag) == "1":
             obj.status = "used"
             obj.tag = 1
+            obj.start_time = start_time
+            obj.end_time = end_time
         else:
             obj.status = "pending"
             obj.tag = 0
-            obj.start_time = start_time
-            obj.end_time = end_time
         try:
             obj.save()
         except Exception as e:
@@ -414,7 +432,7 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
             return Response({"detail": "只能启用已注销用户！"}, status=400)
         if obj.status not in ["used", "pending"] and status == "deleted":
             return Response({"detail": "只能注销待生效和生效中的用户！"}, status=400)
-        if user_is_checker and obj.role == 1: # 审核人员你能修改管理员数据
+        if user_is_checker(request) and obj.role == 1: # 审核人员你能修改管理员数据
             return Response({"detail": "不支持操作管理员数据！"}, status=403)
         obj.status = status
         obj.save()
@@ -470,7 +488,7 @@ class UserLoginAPIView(CreateAPIView):
         return Response({"access_token": access_token, "refresh_token": refresh_token})
 
 
-class UploadMedioAPIView(CreateAPIView):
+class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
     permission_classes = (idAdminAndCheckerPermission, )
 
     @swagger_auto_schema(
@@ -485,6 +503,7 @@ class UploadMedioAPIView(CreateAPIView):
     )
     def post(self, request, *args, **kwargs):
         file = request.data.get("file")
+        logo = request.data.get("logo")
         data = request.data
         type = data.get('type', '')
         title = data.get('title', '')
@@ -495,6 +514,16 @@ class UploadMedioAPIView(CreateAPIView):
         names = file.name.split('.')
         if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
             return Response({"detail":"不支持该文件类型！"}, status=400)
+        uid = ""
+        logo_path = ""
+        if logo:
+            l_names = logo.name.split('.')
+            if l_names[-1] not in ["png", "jpg"]:
+                return Response({"detail": "不支持该文件类型！"}, status=400)
+            uid = str(uuid.uuid4())
+            logo_path = f"{uid}.{l_names[-1]}"
+            with open(os.path.join(settings.BASE_DIR, "media", "logo", logo_path), 'wb')as f:
+                f.write(logo.read())
 
         file_id = str(uuid.uuid4())
         file_path = f"{file_id}.{names[-1]}"
@@ -503,19 +532,36 @@ class UploadMedioAPIView(CreateAPIView):
             with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
                 f.write(file.read())
             if str(time_limite) == "1":
-                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, user=u_name,
-                                           file_id=file_id, time_limite=time_limite, desc=desc)
-
+                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, file_id=file_id,
+                                           user=u_name,
+                                           logo_id=uid, logo_name=logo_path, time_limite=time_limite,
+                                           start_time=start_time, end_time=end_time, desc=desc)
             else:
-                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, file_id=file_id, user=u_name,
-                            time_limite=time_limite, start_time=start_time, end_time=end_time, desc=desc)
+                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, user=u_name,
+                                           logo_id=uid, logo_name=logo_path, file_id=file_id, time_limite=time_limite,
+                                           desc=desc)
             return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
         except Exception as e:
-            return Response({"detail": f"bad request! {e}"})
+            return Response({"detail": f"bad request! {e}"}, status=400)
+
+    def put(self, request, *args, **kwargs):
+        data = request.data
+        file_id = data.get('file_id')
+        file_name = data.get('file_name')
+
+        try:
+            f = Media.objects.filter(file_id=file_id).first()
+            if not f:
+                return Response({"detail": "File not found."}, status=404)
+            f.name = file_name
+            f.save()
+            return Response({"detail": "success", "file_name": file_name})
+        except Exception as e:
+            return Response({"detail": "bad request !"}, status=400)
 
 
 class UploadLogoAPIView(CreateAPIView):
-    # permission_classes = (idAdminAndCheckerPermission,)
+    permission_classes = (idAdminAndCheckerPermission,)
     queryset = Media.objects.all()
 
     def post(self, request, *args, **kwargs):
@@ -539,7 +585,7 @@ class UploadLogoAPIView(CreateAPIView):
 
 
 class QRcodeurlView(APIView):
-    permission_classes = (idAdminAndCheckerPermission, )
+    # permission_classes = (idAdminAndCheckerPermission, )
     def get(self, request, *args, **kwargs):
         file_id = kwargs.get('file_id')
         f = Media.objects.filter(file_id=file_id).first()
@@ -552,7 +598,7 @@ class QRcodeurlView(APIView):
         # 打开文件
         with open(path, 'rb') as file:
             response = HttpResponse(file.read(), content_type=mimetypes.guess_type(path)[0])
-            response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(path)
+            response['Content-Disposition'] = 'attachment; filename=' + f.name
             return response
 
 class DownloadLogoView(APIView):
@@ -659,14 +705,14 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
             obj.path = file_path
             if str(time_limite) == "1":
                 obj.time_limite = time_limite
-            else:
-                obj.time_limite = 0
                 obj.start_time = start_time
                 obj.end_time = end_time
+            else:
+                obj.time_limite = 0
             obj.save()
             return Response({"detail": "success"})
         except Exception as e:
-            return Response({"detail": "bad request !"}, status=400 )
+            return Response({"detail": "bad request !"}, status=400)
 
 
     def put(self, request, *args, **kwargs):
@@ -678,14 +724,17 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         obj = self.get_queryset().filter(file_id=file_id).first()
         if not obj:
             return Response({"detail": "File not found."}, status=404)
-        if str(time_limite) == "1":
-            obj.time_limite = time_limite
-        else:
-            obj.time_limite = 0
-            obj.start_time = start_time
-            obj.end_time = end_time
-        obj.save()
-        return Response({"detail": "success"})
+        try:
+            if str(time_limite) == "1":
+                obj.time_limite = 1
+                obj.start_time = start_time
+                obj.end_time = end_time
+            else:
+                obj.time_limite = 0
+            obj.save()
+            return Response({"detail": "success"})
+        except Exception as e:
+            return Response({"detail": "bad request !"}, status=400)
 
 
 
