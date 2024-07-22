@@ -17,6 +17,8 @@ class LoginPermission(BasePermission):
             if obj.token_exp + datetime.timedelta(hours=24) > now:
                 # if obj.start_time < now < obj.end_time and obj.status == "used":
                 if obj.status == "used":
+                    obj.exp_time = datetime.datetime.now()
+                    obj.save()
                     return True
             return False
         except Exception as e:
@@ -32,6 +34,8 @@ class isAdminPermission(BasePermission):
             now = timezone.now()
             if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
+                    obj.exp_time = datetime.datetime.now()
+                    obj.save()
                     return True
             return False
         except Exception as e:
@@ -48,6 +52,8 @@ class isCheckerPermission(BasePermission):
             now = timezone.now()
             if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
+                    obj.exp_time = datetime.datetime.now()
+                    obj.save()
                     return True
             return False
         except Exception as e:
@@ -63,6 +69,8 @@ class isOperatorPermission(BasePermission):
             now = timezone.now()
             if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
+                    obj.exp_time = datetime.datetime.now()
+                    obj.save()
                     return True
             return False
         except Exception as e:
@@ -80,6 +88,8 @@ class idAdminAndCheckerPermission(BasePermission):
             now = timezone.now()
             if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
+                    obj.exp_time = datetime.datetime.now()
+                    obj.save()
                     return True
             return False
         except Exception as e:
@@ -96,6 +106,8 @@ class isManagementPermission(BasePermission):
             now = timezone.now()
             if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
+                    obj.exp_time = datetime.datetime.now()
+                    obj.save()
                     return True
             return False
         except Exception as e:

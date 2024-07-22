@@ -1,6 +1,6 @@
 
 from django_filters import rest_framework
-from apps.users.models import User
+from apps.users.models import User, Media
 
 
 class UserListerFilter(rest_framework.FilterSet):
@@ -25,3 +25,18 @@ class UserListerFilter(rest_framework.FilterSet):
     class Meta:
         model = User
         fields = ["name", "user_name", "role", "status"]
+
+
+class MediaListerFilter(rest_framework.FilterSet):
+    start_time = rest_framework.CharFilter(method="start_time_filter")
+    end_time = rest_framework.CharFilter(method="end_time_filter")
+
+    def start_time_filter(self, queryset, key, value):
+        return queryset.filter(create_time__gte=value)
+
+    def end_time_filter(self, queryset, key, value):
+        return queryset.filter(create_time__lte=value)
+
+    class Meta:
+        model = Media
+        fields = ["user", "type", "start_time", "end_time"]

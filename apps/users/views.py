@@ -16,7 +16,7 @@ from weixin import WXAPPAPI
 import jwt
 import datetime, base64, time, re
 from utils.generate_jwt import generate_jwt, jwt_decode
-from .filters import UserListerFilter
+from .filters import UserListerFilter, MediaListerFilter
 from .models import User, Media, CheckEmailCode
 from drf_yasg.utils import swagger_auto_schema
 
@@ -31,7 +31,7 @@ import io
 from django.http import HttpResponse
 from qrcode import make as qrcode_make
 
-from .utils import token_to_name
+from .utils import token_to_name, count_checking_user
 
 
 class RegisterAPIView(CreateAPIView):
@@ -85,11 +85,11 @@ class RegisterAPIView(CreateAPIView):
         obj = self.get_queryset().filter(name=name).first()
         if obj:
             if obj.status == "deny": # 已拒绝的可以重新开启
-                self.get_queryset().filter(name=name).update(name=name, user_name=user_name, password=pwd, mobile=mobile, status="checking")
+                self.get_queryset().filter(name=name).update(name=name, user_name=user_name, password=pwd, email=email, status="checking")
                 return Response({"detail": "注册成功，请等待管理员审核"})
             return Response({"detail": "用户名或手机号已注册！"}, status=400)
         user_id = "PC_" + str(uuid.uuid4())
-        cre = self.get_queryset().create(user_id=user_id, name=name, user_name=user_name, password=pwd, mobile=mobile, status="checking")
+        cre = self.get_queryset().create(user_id=user_id, name=name, user_name=user_name, password=pwd, email=email, status="checking")
         return Response({"detail": "注册成功，请等待管理员审核"})
 
 
@@ -122,10 +122,18 @@ class UserAddAPIView(CreateAPIView):
             return Response({"detail": "密码长度超过20个字符！"}, status=400)
         if len(pwd) < 6:
             return Response({"detail": "密码长度少于6个字符！"}, status=400)
-        if tag not in ["0", "1"]:
+        if str(tag) not in ["0", "1"]:
             return Response({"detail": "tag 参数错误！"}, status=400)
         user = User.objects.filter(~Q(role=100)).filter(Q(name=name))
         if user:
+            if user.status == "deny": # 已拒绝的可以重新开启
+                if str(tag) == "1":
+                    User.objects.filter(name=name).update(user_name=user_name, email=email, password=pwd,
+                                        status="used", role=role, tag=tag)
+                else:
+                    User.objects.filter(name=name).update(user_name=user_name, email=email, password=pwd,
+                                    status="pending", role=role, tag=tag, start_time=start_time, end_time=end_time)
+                return Response({"detail": "添加用户成功！"})
             return Response({"detail": "用户名已被占用！"},status=400)
         if role:
             if role not in ["1", "2", "3"]:
@@ -174,6 +182,8 @@ class LoginAPIView(CreateAPIView):
             return Response({"detail": "用户注册被拒绝！"}, status=400)
 
         if obj.password == pwd:
+            if obj.status != "used":
+                return Response({"detail": "该用户状态不是生效中，无法登录！"}, status=400)
             data = {"user_id": obj.user_id, "iat": time.time()}
             access_token = generate_jwt(data, 24)
             refresh_token = generate_jwt(data, 24)
@@ -352,12 +362,14 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
             if role not in ["1", "2", "3"]:
                 return Response({"detail": "不支持勾选该权限！"}, status=400)
             obj.role = int(role)
-        if str(tag) == "1":
+        if str(tag) == "1":  # 立即生效
             obj.tag = 1
+            obj.status = "used"
+        else:
+            obj.tag = 0
             obj.start_time = start_time
             obj.end_time = end_time
-        if start_time and end_time:
-            obj.tag = 0
+            obj.status = "pending"
         try:
             obj.save()
         except Exception as e:
@@ -391,17 +403,19 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
             return Response({"detail": "不支持操作管理员数据！"}, status=403)
         if status == "deny":
             obj.status = status
-            obj.status()
+            obj.save()
             return Response({"detail": "success !"})
         obj.role = int(role)
         if str(tag) == "1":
             obj.status = "used"
             obj.tag = 1
-            obj.start_time = start_time
-            obj.end_time = end_time
         else:
             obj.status = "pending"
             obj.tag = 0
+            obj.start_time = start_time
+            obj.end_time = end_time
+        u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        obj.check_user = u_name
         try:
             obj.save()
         except Exception as e:
@@ -448,9 +462,10 @@ class UserPermissionAPIView(APIView):
         try:
             data = jwt_decode(token)
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id')).first()
+
             rule = {"管理员":1, "审核人员":2, "运营人员":3, "其他":100, "错误": 500}
             if obj:
-                return Response({"role": obj.role, "name": obj.name, "rule": rule})
+                return Response({"role": obj.role, "name": obj.name, "checking": 1,"rule": rule})
             return Response({"role": 500, "rule": rule},)
         except Exception as e:
             return Response({"detail": "permission deny! "}, status=403)
@@ -512,6 +527,7 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
         end_time = data.get('end_time', '')
         desc = data.get('desc', '')
         names = file.name.split('.')
+        f_name = data.get('name')
         if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
             return Response({"detail":"不支持该文件类型！"}, status=400)
         uid = ""
@@ -532,14 +548,14 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
             with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
                 f.write(file.read())
             if str(time_limite) == "1":
-                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, file_id=file_id,
-                                           user=u_name,
+                cre = Media.objects.create(title=title, type=type, name=f_name, path=file_path, file_id=file_id,
+                                           user=u_name, create_time= datetime.datetime.now(),
                                            logo_id=uid, logo_name=logo_path, time_limite=time_limite,
                                            start_time=start_time, end_time=end_time, desc=desc)
             else:
-                cre = Media.objects.create(title=title, type=type, name=file.name, path=file_path, user=u_name,
+                cre = Media.objects.create(title=title, type=type, name=f_name, path=file_path, user=u_name,
                                            logo_id=uid, logo_name=logo_path, file_id=file_id, time_limite=time_limite,
-                                           desc=desc)
+                                           desc=desc, create_time= datetime.datetime.now())
             return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
         except Exception as e:
             return Response({"detail": f"bad request! {e}"}, status=400)
@@ -663,6 +679,7 @@ class SendEmailAPIView(APIView):
 
 class MediaListAPIView(ListAPIView):
     permission_classes = (idAdminAndCheckerPermission, )
+    filterset_class = MediaListerFilter
     pagination_class = ResultsSetPagination
     serializer_class = MedaiSerializers
     queryset = Media.objects.order_by("-id")
@@ -737,4 +754,18 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
             return Response({"detail": "bad request !"}, status=400)
 
 
+class UserInfoAPIView(APIView):
+    permission_classes = (LoginPermission,)
+
+    def get(self, request, *args, **kwargs):
+        token = request.META.get('HTTP_AUTHORIZATION')
+        try:
+            data = jwt_decode(token)
+            obj = User.objects.filter(user_id=data.get("data", {}).get('user_id')).first()
+            if obj:
+                mun = count_checking_user() if obj.role in [1, 2] else 0
+                return Response({"role": obj.role, "name": obj.name, "email": obj.email, "checking_num": mun,})
+            return Response({"detail": "user not found !"}, status=400)
+        except Exception as e:
+            return Response({"detail": "permission deny! "}, status=403)
 
