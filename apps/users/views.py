@@ -252,16 +252,18 @@ class ForgetPdAPIView(CreateAPIView):
             return Response({"detail": "两次密码不一致！"}, status=400)
         if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd1):
             return Response({"message": "密码支持文本与字母数字，不超过20字符"}, status=400)
-        user = self.get_queryset().filter(name=name, email=email).first()
+        user = self.get_queryset().filter(name=name).first()
         if not user:
-            return Response({"detail": "用户名或邮箱不存在！"}, status=400)
+            return Response({"detail": "用户名不存在！"}, status=400)
+        if user.email != email:
+            return Response({"detail": "邮箱需要与注册邮箱一致！"}, status=400)
         obj = CheckEmailCode.objects.filter(email=email, code=code).first()
         now = timezone.now()
         if obj and obj.time + datetime.timedelta(minutes=5) > now:
             pass
         else:
             return Response({"detail": "验证码错误！"}, status=400)
-        if pwd1 in user.old_pwd.get('pwd', []):
+        if pwd1==user.password or pwd1 in user.old_pwd.get('pwd', []):
             return Response({"detail": "新密码不能与旧密码相同！"}, status=400)
         pwd_list = user.old_pwd.get('pwd', [])
         pwd_list.append(user.password)
@@ -286,8 +288,7 @@ class CheckPWDandEmailView(CreateAPIView):
                 return Response({"detail": "邮箱需要与注册邮箱一致！"})
             return Response({"detail": "success"})
         elif type == "pwd":
-            old_pwd = user.old_pwd
-            if pwd in old_pwd.get('pwd', []):
+            if pwd==user.password or pwd in user.old_pwd.get('pwd', []):
                 return Response({"detail": "新密码不能与旧密码相同！"})
             return Response({"detail": "success"})
         return Response({"detail": "bad request !"}, status=400)
