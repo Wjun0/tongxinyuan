@@ -5,6 +5,9 @@ from django.db import models
 
 # Create your models here.
 
+def default_data():
+    return {}
+
 class User(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.CharField(max_length=64, default='', verbose_name="用户ID", unique=True)
@@ -14,6 +17,7 @@ class User(models.Model):
     mobile = models.CharField(max_length=32, default='', verbose_name="手机号码")
     email = models.CharField(max_length=32, default='', verbose_name="邮箱")
     password = models.CharField(max_length=64, default='', verbose_name="密码")
+    old_pwd = models.JSONField(default=default_data, verbose_name="旧密码")
     status = models.CharField(max_length=32, default='used', verbose_name="用户状态") # used|checking待审核|pending待生效|deny已拒绝|已注销deleted
     role = models.IntegerField(default=0, verbose_name='管理员1|审核员2|运营人员3|其他用100')
     tag = models.IntegerField(default=0, verbose_name="是否立即生效")  # 1立即生效 | 0指定时间段生效
@@ -56,3 +60,11 @@ class CheckEmailCode(models.Model):
         db_table = "tong_check_code"
 
 
+class Document(models.Model):
+    filename=models.CharField(max_length=20)
+    #docfile = models.FileField(upload_to='documents/%Y/%m/%d')
+    docfile = models.CharField(max_length=100)
+    # file = models.FileField(upload_to='')
+    def __str__(self):
+        #list_display = ('id', 'title', 'content')
+        return self.filename

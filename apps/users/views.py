@@ -61,8 +61,10 @@ class RegisterAPIView(CreateAPIView):
 
         if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(name):
             return Response({"detail": "用户名支持文本与字母数字，不超过20字符"}, status=400)
-        if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd):
-            return Response({"detail": "密码支持文本与字母数字，不超过20字符"}, status=400)
+        # if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd):
+        #     return Response({"detail": "密码支持文本与字母数字，不超过20字符"}, status=400)
+        if re.search(r'[\u4e00-\u9fff]', pwd):
+            return Response({"detail": "密码仅支持字母、数字、特殊符号!"}, status=400)
         # if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
         #     return Response({"message": "手机号格式不正确！"}, status=400)
         if not re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+$').search(email):
@@ -82,12 +84,17 @@ class RegisterAPIView(CreateAPIView):
         else:
             return Response({"detail": "验证码错误！"}, status=400)
 
-        obj = self.get_queryset().filter(name=name).first()
+        obj = self.get_queryset().filter(Q(name=name) | Q(email=email)).first()
         if obj:
             if obj.status == "deny": # 已拒绝的可以重新开启
-                self.get_queryset().filter(name=name).update(name=name, user_name=user_name, password=pwd, email=email, status="checking")
+                obj.name = name
+                obj.user_name = user_name
+                obj.email = email
+                obj.password = pwd
+                obj.status = "checking"
+                obj.save()
                 return Response({"detail": "注册成功，请等待管理员审核"})
-            return Response({"detail": "用户名或手机号已注册！"}, status=400)
+            return Response({"detail": "用户名或邮箱已注册！"}, status=400)
         user_id = "PC_" + str(uuid.uuid4())
         cre = self.get_queryset().create(user_id=user_id, name=name, user_name=user_name, password=pwd, email=email, status="checking")
         return Response({"detail": "注册成功，请等待管理员审核"})
@@ -108,8 +115,10 @@ class UserAddAPIView(CreateAPIView):
         end_time = data.get('end_time', '')
         if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(name):
             return Response({"message": "用户名支持文本与字母数字，不超过20字符"}, status=400)
-        if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd):
-            return Response({"message": "密码支持文本与字母数字，不超过20字符"}, status=400)
+        if re.search(r'[\u4e00-\u9fff]', pwd):
+            return Response({"detail": "密码仅支持字母、数字、特殊符号!"}, status=400)
+        # if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd):
+        #     return Response({"message": "密码支持文本与字母数字，不超过20字符"}, status=400)
         # if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
         #     return Response({"message": "电话号码格式不正确！"}, status=400)
         if not re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+$').search(email):
@@ -124,15 +133,22 @@ class UserAddAPIView(CreateAPIView):
             return Response({"detail": "密码长度少于6个字符！"}, status=400)
         if str(tag) not in ["0", "1"]:
             return Response({"detail": "tag 参数错误！"}, status=400)
-        user = User.objects.filter(~Q(role=100)).filter(Q(name=name))
+        user = User.objects.filter(~Q(role=100)).filter(Q(name=name) | Q(email=email)).first()
         if user:
             if user.status == "deny": # 已拒绝的可以重新开启
+                user.name = name
+                user.user_name = user_name
+                user.email = email
+                user.password = pwd
+                user.role = role
+                user.tag = tag
                 if str(tag) == "1":
-                    User.objects.filter(name=name).update(user_name=user_name, email=email, password=pwd,
-                                        status="used", role=role, tag=tag)
+                    user.status = "used"
                 else:
-                    User.objects.filter(name=name).update(user_name=user_name, email=email, password=pwd,
-                                    status="pending", role=role, tag=tag, start_time=start_time, end_time=end_time)
+                    user.status = "pending"
+                    user.start_time = start_time
+                    user.end_time = end_time
+                user.save()
                 return Response({"detail": "添加用户成功！"})
             return Response({"detail": "用户名已被占用！"},status=400)
         if role:
@@ -180,10 +196,9 @@ class LoginAPIView(CreateAPIView):
             return Response({"detail": "用户信息待生效！"}, status=400)
         if obj.status == "deny":
             return Response({"detail": "用户注册被拒绝！"}, status=400)
-
+        if obj.status == "deleted":
+            return Response({"detail": "用户名已注销！"}, status=400)
         if obj.password == pwd:
-            if obj.status != "used":
-                return Response({"detail": "该用户状态不是生效中，无法登录！"}, status=400)
             data = {"user_id": obj.user_id, "iat": time.time()}
             access_token = generate_jwt(data, 24)
             refresh_token = generate_jwt(data, 24)
@@ -226,7 +241,7 @@ class ReflushAPIView(APIView):
 class ForgetPdAPIView(CreateAPIView):
     queryset = User.objects.all()
 
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         data = request.data
         name = data.get('name', '')
         pwd1 = data.get('password1', '')
@@ -246,9 +261,37 @@ class ForgetPdAPIView(CreateAPIView):
             pass
         else:
             return Response({"detail": "验证码错误！"}, status=400)
+        if pwd1 in user.old_pwd.get('pwd', []):
+            return Response({"detail": "新密码不能与旧密码相同！"}, status=400)
+        pwd_list = user.old_pwd.get('pwd', [])
+        pwd_list.append(user.password)
+        user.old_pwd = {"pwd": pwd_list}
         user.password = pwd1
         user.save()
         return Response({"detail": "success!"})
+
+
+class CheckPWDandEmailView(CreateAPIView):
+    queryset = User.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        name = data.get('name', '')
+        pwd = data.get('pwd', '')
+        email = data.get('email', '')
+        type = data.get('type', '')
+        user = self.get_queryset().filter(name=name).first()
+        if type == "email":
+            if user.email != email:
+                return Response({"detail": "邮箱需要与注册邮箱一致！"})
+            return Response({"detail": "success"})
+        elif type == "pwd":
+            old_pwd = user.old_pwd
+            if pwd in old_pwd.get('pwd', []):
+                return Response({"detail": "新密码不能与旧密码相同！"})
+            return Response({"detail": "success"})
+        return Response({"detail": "bad request !"}, status=400)
+
 
 
 class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
@@ -465,7 +508,7 @@ class UserPermissionAPIView(APIView):
 
             rule = {"管理员":1, "审核人员":2, "运营人员":3, "其他":100, "错误": 500}
             if obj:
-                return Response({"role": obj.role, "name": obj.name, "checking": 1,"rule": rule})
+                return Response({"role": obj.role, "name": obj.name, "checking": 1,"rule": rule, "user_id": obj.user_id})
             return Response({"role": 500, "rule": rule},)
         except Exception as e:
             return Response({"detail": "permission deny! "}, status=403)
@@ -504,7 +547,7 @@ class UserLoginAPIView(CreateAPIView):
 
 
 class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
-    permission_classes = (idAdminAndCheckerPermission, )
+    permission_classes = (isManagementPermission, )
 
     @swagger_auto_schema(
         operation_summary="上传视频文件",
@@ -544,9 +587,14 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
         file_id = str(uuid.uuid4())
         file_path = f"{file_id}.{names[-1]}"
         u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        def save_file(chunk, file):
+            file.write(chunk)
         try:
+            from concurrent.futures import ThreadPoolExecutor
+            executor = ThreadPoolExecutor(max_workers=5)
             with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
-                f.write(file.read())
+                all_task = [executor.submit(save_file, chunk, f) for chunk in file.chunks(chunk_size=5)]
+
             if str(time_limite) == "1":
                 cre = Media.objects.create(title=title, type=type, name=f_name, path=file_path, file_id=file_id,
                                            user=u_name, create_time= datetime.datetime.now(),
@@ -577,7 +625,7 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
 
 
 class UploadLogoAPIView(CreateAPIView):
-    permission_classes = (idAdminAndCheckerPermission,)
+    permission_classes = (isManagementPermission,)
     queryset = Media.objects.all()
 
     def post(self, request, *args, **kwargs):
@@ -650,9 +698,10 @@ class ChechEmailAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         email = request.query_params.get("email")
-        users = User.objects.filter(~Q(role=100)).filter(email=email)
+        users = User.objects.filter(~Q(role=100)).filter(email=email).first()
         if users:
-            return Response({"is_used": True})
+            if users.status != "deny":
+                return Response({"is_used": True})
         return Response({"is_used": False})
 
 
@@ -678,7 +727,7 @@ class SendEmailAPIView(APIView):
 
 
 class MediaListAPIView(ListAPIView):
-    permission_classes = (idAdminAndCheckerPermission, )
+    permission_classes = (isManagementPermission, )
     filterset_class = MediaListerFilter
     pagination_class = ResultsSetPagination
     serializer_class = MedaiSerializers
@@ -686,7 +735,7 @@ class MediaListAPIView(ListAPIView):
 
 
 class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
-    permission_classes = (idAdminAndCheckerPermission, )
+    permission_classes = (isManagementPermission, )
     serializer_class = MedaiSerializers
     queryset = Media.objects.order_by("-id")
 
@@ -764,7 +813,7 @@ class UserInfoAPIView(APIView):
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id')).first()
             if obj:
                 mun = count_checking_user() if obj.role in [1, 2] else 0
-                return Response({"role": obj.role, "name": obj.name, "email": obj.email, "checking_num": mun,})
+                return Response({"role": obj.role, "name": obj.name, "email": obj.email, "checking_num": mun})
             return Response({"detail": "user not found !"}, status=400)
         except Exception as e:
             return Response({"detail": "permission deny! "}, status=403)
