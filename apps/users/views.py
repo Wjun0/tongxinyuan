@@ -31,7 +31,7 @@ import io
 from django.http import HttpResponse
 from qrcode import make as qrcode_make
 
-from .utils import token_to_name, count_checking_user
+from .utils import token_to_name, count_checking_user, check_user_name_pass, check_name_pass, check_email_pass, check_pwd_pass
 
 
 class RegisterAPIView(CreateAPIView):
@@ -58,16 +58,13 @@ class RegisterAPIView(CreateAPIView):
         mobile = data.get('mobile', '')
         email = data.get('email')
         code = data.get('code')
-
-        if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(name):
+        if not check_name_pass(name):
             return Response({"detail": "用户名支持文本与字母数字，不超过20字符"}, status=400)
-        # if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd):
-        #     return Response({"detail": "密码支持文本与字母数字，不超过20字符"}, status=400)
-        if re.search(r'[\u4e00-\u9fff]', pwd):
+        if not check_user_name_pass(user_name):
+            return Response({"detail": "姓名只支持中文！"}, status=400)
+        if not check_pwd_pass(pwd):
             return Response({"detail": "密码仅支持字母、数字、特殊符号!"}, status=400)
-        # if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
-        #     return Response({"message": "手机号格式不正确！"}, status=400)
-        if not re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+$').search(email):
+        if not check_email_pass(email):
             return Response({"detail": "输入正确的邮箱！"}, status=400)
         if len(name) > 20:
             return Response({"detail": "用户名长度超过20个字符！"}, status=400)
@@ -113,15 +110,13 @@ class UserAddAPIView(CreateAPIView):
         tag = data.get('tag', '')
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
-        if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(name):
-            return Response({"message": "用户名支持文本与字母数字，不超过20字符"}, status=400)
-        if re.search(r'[\u4e00-\u9fff]', pwd):
+        if not check_name_pass(name):
+            return Response({"detail": "用户名支持文本与字母数字，不超过20字符"}, status=400)
+        if not check_user_name_pass(user_name):
+            return Response({"detail": "姓名只支持中文！"}, status=400)
+        if not check_pwd_pass(pwd):
             return Response({"detail": "密码仅支持字母、数字、特殊符号!"}, status=400)
-        # if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd):
-        #     return Response({"message": "密码支持文本与字母数字，不超过20字符"}, status=400)
-        # if not re.compile(r'(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$').search(mobile):
-        #     return Response({"message": "电话号码格式不正确！"}, status=400)
-        if not re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+$').search(email):
+        if not check_email_pass(email):
             return Response({"detail": "输入正确的邮箱！"}, status=400)
         if len(name) > 20:
             return Response({"detail": "用户名长度超过20个字符！"}, status=400)
@@ -250,8 +245,8 @@ class ForgetPdAPIView(CreateAPIView):
         code = data.get('code', '')
         if pwd1 != pwd2:
             return Response({"detail": "两次密码不一致！"}, status=400)
-        if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(pwd1):
-            return Response({"message": "密码支持文本与字母数字，不超过20字符"}, status=400)
+        if not check_pwd_pass(pwd1):
+            return Response({"detail": "密码仅支持字母、数字、特殊符号!"}, status=400)
         user = self.get_queryset().filter(name=name).first()
         if not user:
             return Response({"detail": "用户名不存在！"}, status=400)
@@ -385,7 +380,7 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
         if not obj:
             return Response({"detail": "不支持编辑该用户！"}, status=400)
         if name:
-            if not re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(name):
+            if not check_name_pass(name):
                 return Response({"detail": "用户名支持文本与字母数字，不超过20字符"}, status=400)
             if len(name) > 20:
                 return Response({"detail": "用户名长度超过20个字符！"}, status=400)
@@ -401,6 +396,8 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
         if user_name:
             if len(user_name) > 20:
                 return Response({"detail": "姓名长度超过20个字符！"}, status=400)
+            if not check_user_name_pass(user_name):
+                return Response({"detail": "姓名只支持汉字！"}, status=400)
             obj.user_name = user_name
         if role:
             if role not in ["1", "2", "3"]:
@@ -438,17 +435,21 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
         status = data.get('status', '')
+        obj = get_object_or_404(self.get_queryset(), user_id=user_id, name=name)
+        if not obj:
+            return Response({"detail": "用户不存在 !"}, status=400)
+        if status == "deny":
+            u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+            obj.check_user = u_name
+            obj.status = status
+            obj.save()
+            return Response({"detail": "success !"})
         if role not in ["1" ,"2" ,"3"]:
             return Response({"detail": "不支持勾选该权限！"}, status=400)
-        obj = get_object_or_404(self.get_queryset(), user_id=user_id, name=name)
         if obj.status != "checking":
             return Response({"detail": "用户状态不是待审核！"}, status=400)
         if user_is_checker(request) and obj.role == 1:  # 审核人员你能修改管理员数据
             return Response({"detail": "不支持操作管理员数据！"}, status=403)
-        if status == "deny":
-            obj.status = status
-            obj.save()
-            return Response({"detail": "success !"})
         obj.role = int(role)
         if str(tag) == "1":
             obj.status = "used"
@@ -506,7 +507,6 @@ class UserPermissionAPIView(APIView):
         try:
             data = jwt_decode(token)
             obj = User.objects.filter(user_id=data.get("data", {}).get('user_id')).first()
-
             rule = {"管理员":1, "审核人员":2, "运营人员":3, "其他":100, "错误": 500}
             if obj:
                 return Response({"role": obj.role, "name": obj.name, "checking": 1,"rule": rule, "user_id": obj.user_id})
@@ -710,7 +710,7 @@ class SendEmailAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         email = request.query_params.get("email")
-        if not re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+$').search(email):
+        if not check_email_pass(email):
             return Response({"detail": "输入正确的邮箱！"}, status=400)
         code = random.randint(111111, 999999)
         try:
