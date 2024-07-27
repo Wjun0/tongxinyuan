@@ -40,6 +40,7 @@ class Media(models.Model):
     path = models.CharField(max_length=64, default="", verbose_name="文件路径")
     logo_id = models.CharField(max_length=64, default="", verbose_name="logo id")
     logo_name = models.CharField(max_length=64, default="", verbose_name="logo 文件名")
+    original_url = models.CharField(max_length=512, default="", verbose_name="原始url")
     user = models.CharField(max_length=64, default="", verbose_name="上传用户")
     time_limite = models.CharField(max_length=32, default="", verbose_name="使用限制")
     start_time = models.DateTimeField(null=True, blank=True, verbose_name="生效时间")
@@ -61,9 +62,9 @@ class CheckEmailCode(models.Model):
 
 
 class Document(models.Model):
-    filename=models.CharField(max_length=20)
+    filename=models.CharField(max_length=200)
     #docfile = models.FileField(upload_to='documents/%Y/%m/%d')
-    docfile = models.CharField(max_length=100)
+    docfile = models.CharField(max_length=200)
     # file = models.FileField(upload_to='')
     def __str__(self):
         #list_display = ('id', 'title', 'content')

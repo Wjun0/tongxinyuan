@@ -1,4 +1,4 @@
-from apps.users import views, strem_view, upload_view
+from apps.users import views, strem_view, upload_view, upload_view_class
 from django.urls import path, re_path
 
 urlpatterns = [
@@ -11,6 +11,7 @@ urlpatterns = [
     re_path(r'userList/$', views.UserAPIView.as_view()),          # 用户列表
     re_path(r'^userAudit/$', views.UserAuditAPIView.as_view()),     # 审核用户
     re_path(r'^upload/$', views.UploadMedioAPIView.as_view()),      # 上传音频生成二维码
+    re_path(r'^upload_url/$', views.UploadUrlMedioAPIView.as_view()),      # 上传链接生成二维码
     re_path(r'^uploadLogo/$', views.UploadLogoAPIView.as_view()),      # 上传封面
     #path('download/<file_id>/', views.QRcodeurlView.as_view()),       # 下载音频|视频
     path('download/<file_id>/', strem_view.stream_video),               # 下载音频|视频
@@ -24,8 +25,11 @@ urlpatterns = [
     re_path(r'^userInfo/$', views.UserInfoAPIView.as_view()),                 # 用户信息
     re_path(r'^checkpwd/$', views.CheckPWDandEmailView.as_view()),           # 校验密码和邮箱
 
+    re_path(r'^index/$', upload_view_class.IndexUploadView.as_view()),          # 一个分片上传后被调用
+    re_path(r'^success/$', upload_view_class.SuccessUploadView.as_view()),      # 所有分片上传成功后被调用
 
-    path('index/', upload_view.index),  # 一个分片上传后被调用
-    path('success/', upload_view.upload_success),  # 所有分片上传成功后被调用
-    path('file_exist/', upload_view.list_exist),  # 判断文件的分片是否存在
+
+    # path('index/', upload_view.index),  # 一个分片上传后被调用
+    # path('success/', upload_view.upload_success),  # 所有分片上传成功后被调用
+    # path('file_exist/', upload_view.list_exist),  # 判断文件的分片是否存在
 ]

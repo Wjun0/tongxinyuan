@@ -17,11 +17,11 @@ import jwt
 import datetime, base64, time, re
 from utils.generate_jwt import generate_jwt, jwt_decode
 from .filters import UserListerFilter, MediaListerFilter
-from .models import User, Media, CheckEmailCode
+from .models import User, Media, CheckEmailCode, Document
 from drf_yasg.utils import swagger_auto_schema
 
 from .pagenation import ResultsSetPagination
-from .permission import LoginPermission, idAdminAndCheckerPermission, isManagementPermission
+from .permission import LoginPermission, idAdminAndCheckerPermission, isManagementPermission, FlushPermission
 from .permission_utils import user_is_checker
 from .send_email import send
 from .serializers import UserSerizlizers, MedaiSerializers
@@ -561,7 +561,7 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
         ),
     )
     def post(self, request, *args, **kwargs):
-        file = request.data.get("file")
+        file_id = request.data.get("file_id")
         logo = request.data.get("logo")
         data = request.data
         type = data.get('type', '')
@@ -570,10 +570,11 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
         desc = data.get('desc', '')
-        names = file.name.split('.')
         f_name = data.get('name')
-        if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
-            return Response({"detail":"不支持该文件类型！"}, status=400)
+        if time_limite not in [0, 1, "0", "1"]:
+            return Response({"detail": "不支持该限制类型time_limite ！"}, status=400)
+        # if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
+        #     return Response({"detail":"不支持该文件类型！"}, status=400)
         uid = ""
         logo_path = ""
         if logo:
@@ -585,25 +586,19 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
             with open(os.path.join(settings.BASE_DIR, "media", "logo", logo_path), 'wb')as f:
                 f.write(logo.read())
 
-        file_id = str(uuid.uuid4())
-        file_path = f"{file_id}.{names[-1]}"
         u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
-        def save_file(chunk, file):
-            file.write(chunk)
+        f = Document.objects.filter(file_id).first()
+        if not f:
+            return Response({"detail":"不支持的file_id"}, status=400)
         try:
-            from concurrent.futures import ThreadPoolExecutor
-            executor = ThreadPoolExecutor(max_workers=5)
-            with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
-                all_task = [executor.submit(save_file, chunk, f) for chunk in file.chunks(chunk_size=5)]
-
             if str(time_limite) == "1":
-                cre = Media.objects.create(title=title, type=type, name=f_name, path=file_path, file_id=file_id,
+                cre = Media.objects.create(title=title, type=type, name=f_name, path=f.filename, file_id=f.docfile,
                                            user=u_name, create_time= datetime.datetime.now(),
                                            logo_id=uid, logo_name=logo_path, time_limite=time_limite,
                                            start_time=start_time, end_time=end_time, desc=desc)
             else:
-                cre = Media.objects.create(title=title, type=type, name=f_name, path=file_path, user=u_name,
-                                           logo_id=uid, logo_name=logo_path, file_id=file_id, time_limite=time_limite,
+                cre = Media.objects.create(title=title, type=type, name=f_name, path=f.filename, user=u_name,
+                                           logo_id=uid, logo_name=logo_path, file_id=f.docfile, time_limite=time_limite,
                                            desc=desc, create_time= datetime.datetime.now())
             return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
         except Exception as e:
@@ -623,6 +618,40 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
             return Response({"detail": "success", "file_name": file_name})
         except Exception as e:
             return Response({"detail": "bad request !"}, status=400)
+
+
+class UploadUrlMedioAPIView(CreateAPIView):
+    permission_classes = (isManagementPermission,)
+    queryset = Media.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        logo = request.data.get("logo")
+        data = request.data
+        original_url = data.get('original_url')
+        title = data.get('title', '')
+        desc = data.get('desc', '')
+        # f_name = data.get('name')
+        uid = ""
+        logo_path = ""
+        if not original_url:
+            return Response({"detail": "origin_url 必传！"}, status=400)
+        if logo:
+            l_names = logo.name.split('.')
+            if l_names[-1] not in ["png", "jpg"]:
+                return Response({"detail": "不支持该文件类型！"}, status=400)
+            uid = str(uuid.uuid4())
+            logo_path = f"{uid}.{l_names[-1]}"
+            with open(os.path.join(settings.BASE_DIR, "media", "logo", logo_path), 'wb')as f:
+                f.write(logo.read())
+        u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        file_id = str(uuid.uuid4())
+        try:
+            cre = Media.objects.create(title=title, type="url", name=random.randint(1,10), path="", user=u_name, original_url=original_url,
+                                       logo_id=uid, logo_name=logo_path, file_id=file_id, time_limite="0",
+                                       desc=desc, create_time= datetime.datetime.now())
+            return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
+        except Exception as e:
+            return Response({"detail": f"bad request! {e}"}, status=400)
 
 
 class UploadLogoAPIView(CreateAPIView):
@@ -805,7 +834,7 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
 
 
 class UserInfoAPIView(APIView):
-    permission_classes = (LoginPermission,)
+    permission_classes = (FlushPermission,)
 
     def get(self, request, *args, **kwargs):
         token = request.META.get('HTTP_AUTHORIZATION')

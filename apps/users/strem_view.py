@@ -1,12 +1,14 @@
+import datetime
 import re
 import os
 import mimetypes
 from wsgiref.util import FileWrapper
-
 from django.conf import settings
 from django.http import StreamingHttpResponse, HttpResponse
+from django.utils import timezone
 
 from apps.users.models import Media
+from libs import ajax
 
 
 def file_iterator(file_name, chunk_size=8192, offset=0, length=None):
@@ -26,7 +28,12 @@ def file_iterator(file_name, chunk_size=8192, offset=0, length=None):
 def stream_video(request, file_id):
     f = Media.objects.filter(file_id=file_id).first()
     if not f:
-        return HttpResponse('Video not found', status=404)
+        return HttpResponse('页面不存在', status=404)
+    if f.time_limite == 1 or f.time_limite == "1":
+        now = timezone.now()
+        if not f.start_time <  now < f.end_time:
+            return HttpResponse('页面已失效', status=400)
+
     filename = f"media/qrcode/{f.path}"
     video_path = os.path.join(settings.BASE_DIR, filename)
 
@@ -51,5 +58,8 @@ def stream_video(request, file_id):
         # 不是以视频流方式的获取时，以生成器方式返回整个文件，节省内存
         resp = StreamingHttpResponse(FileWrapper(open(video_path, 'rb')), content_type=content_type)
         resp['Content-Length'] = str(size)
+        # url = settings.DOMAIN + "/user/download/" + file_id + "/"
+        # return ajax.ajax_template(request, 'download_media.html', {'url': url})
+        # return ajax.ajax_template(request, '1.html', {'url': url})
     resp['Accept-Ranges'] = 'bytes'
     return resp

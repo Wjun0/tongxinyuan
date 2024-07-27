@@ -1,4 +1,4 @@
-
+from django.conf import settings
 from django_filters import rest_framework
 from apps.users.models import User, Media
 
@@ -30,6 +30,7 @@ class UserListerFilter(rest_framework.FilterSet):
 class MediaListerFilter(rest_framework.FilterSet):
     start_time = rest_framework.CharFilter(method="start_time_filter")
     end_time = rest_framework.CharFilter(method="end_time_filter")
+    url = rest_framework.CharFilter(method="url_filter")
 
     def start_time_filter(self, queryset, key, value):
         return queryset.filter(create_time__gte=value)
@@ -37,6 +38,10 @@ class MediaListerFilter(rest_framework.FilterSet):
     def end_time_filter(self, queryset, key, value):
         return queryset.filter(create_time__lte=value)
 
+    def url_filter(self, queryset, key, value):
+        file_id = value.replace(settings.DOMAIN, "").replace("user/download/", "").replace("/","")
+        return queryset.filter(file_id=file_id)
+
     class Meta:
         model = Media
-        fields = ["user", "type", "start_time", "end_time"]
+        fields = ["user", "type", "start_time", "end_time", "url"]
