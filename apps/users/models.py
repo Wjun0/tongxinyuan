@@ -47,6 +47,7 @@ class Media(models.Model):
     end_time = models.DateTimeField(null=True, blank=True, verbose_name="结束时间")
     desc = models.CharField(max_length=64, default="", verbose_name="描述信息")
     create_time = models.DateTimeField(null=True, blank=True, verbose_name="创建时间")
+    update_time = models.DateTimeField(null=True, blank=True, verbose_name="更新时间")
     class Meta:
         db_table = "tong_media"
 

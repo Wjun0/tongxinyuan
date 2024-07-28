@@ -15,6 +15,7 @@ urlpatterns = [
     re_path(r'^uploadLogo/$', views.UploadLogoAPIView.as_view()),      # 上传封面
     #path('download/<file_id>/', views.QRcodeurlView.as_view()),       # 下载音频|视频
     path('download/<file_id>/', strem_view.stream_video),               # 下载音频|视频
+    path('download_tmp/<file_id>/', strem_view.tmp_stream_video),           # 下载音频|视频
     path('download_logo/<logo_id>/', views.DownloadLogoView.as_view()),    # 下载logo
     re_path(r'^mediaList/$', views.MediaListAPIView.as_view()),             # 返回上传文件列表
     re_path(r'^mediaDetail/$', views.MediaDetailAPIView.as_view()),         # 文件详情

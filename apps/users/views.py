@@ -9,7 +9,7 @@ from django.shortcuts import render
 # Create your views here.
 from django_filters import rest_framework
 from drf_yasg.openapi import Schema, TYPE_OBJECT, TYPE_STRING, TYPE_INTEGER, FORMAT_DATETIME
-from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, get_object_or_404
+from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, get_object_or_404, DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from weixin import WXAPPAPI
@@ -591,15 +591,16 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
         if not f:
             return Response({"detail":"不支持的file_id"}, status=400)
         try:
+            now = datetime.datetime.now()
             if str(time_limite) == "1":
                 cre = Media.objects.create(title=title, type=type, name=f_name, path=f.filename, file_id=f.docfile,
-                                           user=u_name, create_time= datetime.datetime.now(),
+                                           user=u_name, create_time=now, update_time=now,
                                            logo_id=uid, logo_name=logo_path, time_limite=time_limite,
                                            start_time=start_time, end_time=end_time, desc=desc)
             else:
                 cre = Media.objects.create(title=title, type=type, name=f_name, path=f.filename, user=u_name,
                                            logo_id=uid, logo_name=logo_path, file_id=f.docfile, time_limite=time_limite,
-                                           desc=desc, create_time= datetime.datetime.now())
+                                           desc=desc, create_time=now, update_time=now)
             return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
         except Exception as e:
             return Response({"detail": f"bad request! {e}"}, status=400)
@@ -608,19 +609,19 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
         data = request.data
         file_id = data.get('file_id')
         file_name = data.get('file_name')
-
         try:
             f = Media.objects.filter(file_id=file_id).first()
             if not f:
                 return Response({"detail": "File not found."}, status=404)
             f.name = file_name
+            f.update_time = datetime.datetime.now()
             f.save()
             return Response({"detail": "success", "file_name": file_name})
         except Exception as e:
             return Response({"detail": "bad request !"}, status=400)
 
 
-class UploadUrlMedioAPIView(CreateAPIView):
+class UploadUrlMedioAPIView(CreateAPIView, UpdateAPIView):
     permission_classes = (isManagementPermission,)
     queryset = Media.objects.all()
 
@@ -629,10 +630,15 @@ class UploadUrlMedioAPIView(CreateAPIView):
         data = request.data
         original_url = data.get('original_url')
         title = data.get('title', '')
+        name = data.get('name', '')
         desc = data.get('desc', '')
-        # f_name = data.get('name')
+        time_limite = data.get('time_limite', '')
+        start_time = data.get('start_time', '')
+        end_time = data.get('end_time', '')
         uid = ""
         logo_path = ""
+        if time_limite not in [0, 1, "0", "1"]:
+            return Response({"detail": "不支持该限制类型time_limite ！"}, status=400)
         if not original_url:
             return Response({"detail": "origin_url 必传！"}, status=400)
         if logo:
@@ -646,12 +652,35 @@ class UploadUrlMedioAPIView(CreateAPIView):
         u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
         file_id = str(uuid.uuid4())
         try:
-            cre = Media.objects.create(title=title, type="url", name=random.randint(1,10), path="", user=u_name, original_url=original_url,
-                                       logo_id=uid, logo_name=logo_path, file_id=file_id, time_limite="0",
-                                       desc=desc, create_time= datetime.datetime.now())
+            now = datetime.datetime.now()
+            if str(time_limite) == "1":
+                cre = Media.objects.create(title=title, type="url", name=name, path="", user=u_name,
+                                           original_url=original_url,
+                                           logo_id=uid, logo_name=logo_path, file_id=file_id, time_limite=time_limite,
+                                           start_time=start_time, end_time=end_time,
+                                           desc=desc, create_time=now, update_time=now)
+            else:
+                cre = Media.objects.create(title=title, type="url", name=name, path="", user=u_name, original_url=original_url,
+                                           logo_id=uid, logo_name=logo_path, file_id=file_id, time_limite=time_limite,
+                                           desc=desc, create_time=now, update_time=now)
             return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
         except Exception as e:
             return Response({"detail": f"bad request! {e}"}, status=400)
+
+    def put(self, request, *args, **kwargs):
+        data = request.data
+        file_id = data.get('file_id')
+        original_url = data.get('original_url')
+        try:
+            f = Media.objects.filter(file_id=file_id).first()
+            if not f:
+                return Response({"detail": "File not found."}, status=404)
+            f.original_url = original_url
+            f.update_time = datetime.datetime.now()
+            f.save()
+            return Response({"detail": "success", "original_url": original_url})
+        except Exception as e:
+            return Response({"detail": "bad request !"}, status=400)
 
 
 class UploadLogoAPIView(CreateAPIView):
@@ -674,6 +703,7 @@ class UploadLogoAPIView(CreateAPIView):
             f.write(file.read())
         obj.logo_id = uid
         obj.logo_name = file_path
+        f.update_time = datetime.datetime.now()
         obj.save()
         return Response({"detail": "success ", "logo_id": uid, "url": settings.DOMAIN + "/user/download_logo/" + uid})
 
@@ -764,7 +794,7 @@ class MediaListAPIView(ListAPIView):
     queryset = Media.objects.order_by("-id")
 
 
-class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
+class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView):
     permission_classes = (isManagementPermission, )
     serializer_class = MedaiSerializers
     queryset = Media.objects.order_by("-id")
@@ -776,7 +806,6 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
             return Response({"detail": "File not found."}, status=404)
         ser = self.get_serializer(f)
         return Response(ser.data)
-
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -797,6 +826,7 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         try:
             obj.name = f.filename
             obj.path = f.filename
+            obj.update_time = timezone.now()
             if str(time_limite) == "1":
                 obj.time_limite = time_limite
                 obj.start_time = start_time
@@ -807,7 +837,6 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
             return Response({"detail": "success"})
         except Exception as e:
             return Response({"detail": "bad request !"}, status=400)
-
 
     def put(self, request, *args, **kwargs):
         data = request.data
@@ -828,10 +857,47 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
                 obj.end_time = end_time
             else:
                 obj.time_limite = 0
+            obj.update_time = timezone.now()
             obj.save()
             return Response({"detail": "success"})
         except Exception as e:
             return Response({"detail": "bad request !"}, status=400)
+
+    def delete(self, request, *args, **kwargs):
+        data = request.data
+        file_id = data.get('file_id', '')
+        type = data.get('type', '')
+        obj = self.get_queryset().filter(file_id=file_id).first()
+        if not obj:
+            return Response({"detail": "File not found."}, status=404)
+        if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+            if not operator_change_data(request, obj):
+                return Response({"detail": "没有权限操作该数据！"}, status=403)
+        if type == "logo":
+            try:
+                logo_name = obj.logo_name
+                p = os.path.join(settings.BASE_DIR, "media", "logo", logo_name)
+                os.remove(p)
+                obj.logo_id = ""
+                obj.logo_name = ""
+                obj.save()
+                return Response({"detail": "success"})
+            except Exception as e:
+                return Response({"detail": "文件不存在！"}, status=400)
+        elif type == "media":
+            try:
+                path = obj.path
+                logo_name = obj.logo_name
+                if logo_name:
+                    p = os.path.join(settings.BASE_DIR, "media", "logo", logo_name)
+                    os.remove(p)
+                p = os.path.join(settings.BASE_DIR, "media", "qrcode", path)
+                os.remove(p)
+                obj.delete()
+                return Response({"detail": "success"})
+            except Exception as e:
+                return Response({"detail": "文件不存在！"}, status=400)
+        return Response({"detail": "bad request"}, 400)
 
 
 class UserInfoAPIView(APIView):
