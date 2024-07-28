@@ -15,6 +15,11 @@ class IndexUploadView(CreateAPIView):
         task = request.POST.get('task_id')  # 获取文件唯一标识符
         print("分片", task)
         real_file_name = upload_file._name
+        print("===========")
+        print(real_file_name)
+        # if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm",
+        #                      "svcd", "vcd"]:
+        #     return Response({"detail": "不支持该文件类型！"}, status=400)
         chunk = request.POST.get('chunk', 0)
         print("分片上传", chunk)
         filename = './media/file/%s%s' % (task, chunk)

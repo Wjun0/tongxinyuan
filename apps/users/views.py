@@ -22,7 +22,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from .pagenation import ResultsSetPagination
 from .permission import LoginPermission, idAdminAndCheckerPermission, isManagementPermission, FlushPermission
-from .permission_utils import user_is_checker
+from .permission_utils import user_is_checker, user_is_operator, operator_change_data
 from .send_email import send
 from .serializers import UserSerizlizers, MedaiSerializers
 import uuid
@@ -570,7 +570,7 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
         desc = data.get('desc', '')
-        f_name = data.get('name')
+        f_name = data.get('name', "")
         if time_limite not in [0, 1, "0", "1"]:
             return Response({"detail": "不支持该限制类型time_limite ！"}, status=400)
         # if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
@@ -587,7 +587,7 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
                 f.write(logo.read())
 
         u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
-        f = Document.objects.filter(file_id).first()
+        f = Document.objects.filter(docfile=file_id).first()
         if not f:
             return Response({"detail":"不支持的file_id"}, status=400)
         try:
@@ -779,26 +779,24 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
 
 
     def create(self, request, *args, **kwargs):
-        file = request.data.get("file")
         data = request.data
         time_limite = data.get('time_limite', '')
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
         file_id = data.get('file_id', '')
-        names = file.name.split('.')
-        if names[-1] not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm",
-                             "svcd", "vcd"]:
-            return Response({"detail": "不支持该文件类型！"}, status=400)
-
+        new_file_id  = data.get('new_file_id', '')
         obj = self.get_queryset().filter(file_id=file_id).first()
         if not obj:
             return Response({"detail": "File not found."}, status=404)
-        file_path = f"{obj.file_id}.{names[-1]}"
+        if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+            if not operator_change_data(request, obj):
+                return Response({"detail": "没有权限操作该数据！"}, status=403)
+        f = Document.objects.filter(docfile=new_file_id).first()
+        if not f:
+            return Response({"detail": "不支持的new_file_id"}, status=400)
         try:
-            with open(os.path.join(settings.BASE_DIR, "media", "qrcode", file_path), 'wb')as f:
-                f.write(file.read())
-            obj.name = file.name
-            obj.path = file_path
+            obj.name = f.filename
+            obj.path = f.filename
             if str(time_limite) == "1":
                 obj.time_limite = time_limite
                 obj.start_time = start_time
@@ -820,6 +818,9 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         obj = self.get_queryset().filter(file_id=file_id).first()
         if not obj:
             return Response({"detail": "File not found."}, status=404)
+        if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+            if not operator_change_data(request, obj):
+                return Response({"detail": "没有权限操作该数据！"}, status=403)
         try:
             if str(time_limite) == "1":
                 obj.time_limite = 1

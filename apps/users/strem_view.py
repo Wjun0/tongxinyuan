@@ -9,6 +9,14 @@ from django.utils import timezone
 
 from apps.users.models import Media
 from libs import ajax
+import requests
+
+def get_url_response(url):
+    try:
+        resp = requests.get(url, verify=False)
+        return resp
+    except Exception as e:
+        return f"{url}  链接不能访问！"
 
 
 def file_iterator(file_name, chunk_size=8192, offset=0, length=None):
@@ -29,6 +37,13 @@ def stream_video(request, file_id):
     f = Media.objects.filter(file_id=file_id).first()
     if not f:
         return HttpResponse('页面不存在', status=404)
+
+    ##########
+    # url 类型的requests 请求访问
+    if f.type == "url":
+        return HttpResponse(get_url_response(f.original_url))
+    ############
+
     if f.time_limite == 1 or f.time_limite == "1":
         now = timezone.now()
         if not f.start_time <  now < f.end_time:

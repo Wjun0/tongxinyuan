@@ -13,7 +13,7 @@ class FlushPermission(BasePermission):  # 定时任务获取用户信息的认�
             user_id = data.get("data", {}).get('user_id')
             obj = User.objects.filter(user_id=user_id, token=token).first()
             now = timezone.now()
-            if obj.token_exp + datetime.timedelta(minutes=2) > now:
+            if obj.token_exp + datetime.timedelta(hours=24) > now:
                 if obj.status == "used":
                     return True
             return False
