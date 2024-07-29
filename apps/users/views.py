@@ -1,7 +1,7 @@
 import mimetypes
 import os
 import random
-
+import string
 from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import render
@@ -637,6 +637,8 @@ class UploadUrlMedioAPIView(CreateAPIView, UpdateAPIView):
         end_time = data.get('end_time', '')
         uid = ""
         logo_path = ""
+        now = datetime.datetime.now()
+        name = name if name else f"{now.year}{now.month}{now.day}{''.join(random.choices(string.ascii_lowercase, k=2))}"
         if time_limite not in [0, 1, "0", "1"]:
             return Response({"detail": "不支持该限制类型time_limite ！"}, status=400)
         if not original_url:
@@ -675,6 +677,9 @@ class UploadUrlMedioAPIView(CreateAPIView, UpdateAPIView):
             f = Media.objects.filter(file_id=file_id).first()
             if not f:
                 return Response({"detail": "File not found."}, status=404)
+            if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+                if not operator_change_data(request, f):
+                    return Response({"detail": "没有权限操作该数据！"}, status=403)
             f.original_url = original_url
             f.update_time = datetime.datetime.now()
             f.save()
@@ -707,6 +712,29 @@ class UploadLogoAPIView(CreateAPIView):
         obj.save()
         return Response({"detail": "success ", "logo_id": uid, "url": settings.DOMAIN + "/user/download_logo/" + uid})
 
+class UploadQRcodeAPIView(CreateAPIView):
+    permission_classes = (isManagementPermission,)
+    queryset = Media.objects.all()
+    def post(self, request, *args, **kwargs):
+        file = request.data.get("file")
+        data = request.data
+        file_id = data.get('file_id', '')
+        names = file.name.split('.')
+        if names[-1] not in ["png", "jpg"]:
+            return Response({"detail": "不支持该文件类型！"}, status=400)
+        obj = self.get_queryset().filter(file_id=file_id).first()
+        if not obj:
+            return Response({"detail": "File not found !"}, status=400)
+        uid = str(uuid.uuid4())
+        file_path = f"{uid}.{names[-1]}"
+        with open(os.path.join(settings.BASE_DIR, "media", "logo", file_path), 'wb')as f:
+            f.write(file.read())
+        obj.qrcode_id = uid
+        obj.qrcode_name = file_path
+        f.update_time = datetime.datetime.now()
+        obj.save()
+        return Response({"detail": "success ", "qrcode_id": uid, "url": settings.DOMAIN + "/user/download_qrcode/" + uid})
+
 
 class QRcodeurlView(APIView):
     # permission_classes = (idAdminAndCheckerPermission, )
@@ -734,6 +762,23 @@ class DownloadLogoView(APIView):
         if not f:
             return Response({"detail": "File not found."}, status=404)
         filename = f"media/logo/{f.logo_name}"
+        path = os.path.join(settings.BASE_DIR, filename)
+        if not os.path.exists(path):
+            return Response({"detail": "File not found."}, status=404)
+        # 打开文件
+        with open(path, 'rb') as file:
+            response = HttpResponse(file.read(), content_type=mimetypes.guess_type(path)[0])
+            response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(path)
+            return response
+
+class DownloadQrcodeView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        qrcode_id = kwargs.get('qrcode_id')
+        f = Media.objects.filter(qrcode_id=qrcode_id).first()
+        if not f:
+            return Response({"detail": "File not found."}, status=404)
+        filename = f"media/logo/{f.qrcode_name}"
         path = os.path.join(settings.BASE_DIR, filename)
         if not os.path.exists(path):
             return Response({"detail": "File not found."}, status=404)
@@ -844,12 +889,25 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIVi
         start_time = data.get('start_time', '')
         end_time = data.get('end_time', '')
         file_id = data.get('file_id', '')
+        type = data.get('type', '')
+        new_file_id = data.get('new_file_id', '')
         obj = self.get_queryset().filter(file_id=file_id).first()
         if not obj:
             return Response({"detail": "File not found."}, status=404)
         if user_is_operator(request):  # 如果是运营人员，判断是否有权限
             if not operator_change_data(request, obj):
                 return Response({"detail": "没有权限操作该数据！"}, status=403)
+        if type == "update_file":
+            if new_file_id:
+                d = Document.objects.filter(docfile=new_file_id).first()
+                if not d:
+                    return Response({"detail": "New File not found."}, status=404)
+                obj.path = d.filename
+                obj.update_time = datetime.datetime.now()
+                obj.save()
+                return Response({"detail": "success"})
+            else:
+                return Response({"message": "new_file_id 不能为空！"}, status=400)
         try:
             if str(time_limite) == "1":
                 obj.time_limite = 1
@@ -897,6 +955,9 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIVi
                 return Response({"detail": "success"})
             except Exception as e:
                 return Response({"detail": "文件不存在！"}, status=400)
+        elif type == "url":
+            obj.delete()
+            return Response({"detail": "success"})
         return Response({"detail": "bad request"}, 400)
 
 

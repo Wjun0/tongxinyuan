@@ -26,8 +26,8 @@ class IndexUploadView(CreateAPIView):
         if not os.path.exists(filename):
             try:
                 with open(filename, 'wb') as f:
-                    # for obj in upload_file.chunks():
-                    #     f.write(obj)
+                    for obj in upload_file.chunks():
+                        f.write(obj)
                     f.write(upload_file.read())
                     f.close()
                 return Response({"detail": "success"})

@@ -37,9 +37,11 @@ class Media(models.Model):
     title = models.CharField(max_length=64, default="", verbose_name="标题")
     name = models.CharField(max_length=64, default="", verbose_name="文件名称")
     type = models.CharField(max_length=32, default="", verbose_name="文件类型")
-    path = models.CharField(max_length=64, default="", verbose_name="文件路径")
-    logo_id = models.CharField(max_length=64, default="", verbose_name="logo id")
-    logo_name = models.CharField(max_length=64, default="", verbose_name="logo 文件名")
+    path = models.CharField(max_length=64, default="", verbose_name="文件路径")  # 关联的媒体文件
+    logo_id = models.CharField(max_length=64, default="", verbose_name="logo id")  # 封面图片id
+    logo_name = models.CharField(max_length=64, default="", verbose_name="logo 文件名")  # 封面
+    qrcode_name = models.CharField(max_length=64, default="", verbose_name="美化后的二维码")    # 二维码名称
+    qrcode_id = models.CharField(max_length=64, default="", verbose_name="美化后的二维码")      # 二维码id
     original_url = models.CharField(max_length=512, default="", verbose_name="原始url")
     user = models.CharField(max_length=64, default="", verbose_name="上传用户")
     time_limite = models.CharField(max_length=32, default="", verbose_name="使用限制")
