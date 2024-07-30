@@ -21,6 +21,7 @@ urlpatterns = [
     path('download_qrcode/<qrcode_id>/', views.DownloadQrcodeView.as_view()),    # 下载二维码
     re_path(r'^mediaList/$', views.MediaListAPIView.as_view()),             # 返回上传文件列表
     re_path(r'^mediaDetail/$', views.MediaDetailAPIView.as_view()),         # 文件详情
+    re_path(r'^mediaDelete/$', views.MediaDeleteAPIView.as_view()),         # 单独的删除接口
     re_path(r'^userPermission/$', views.UserPermissionAPIView.as_view()),  # 返回用户权限信息
     re_path(r'^checkUser/$', views.ChechUserAPIView.as_view()),              # 检查用户名是否被占用
     re_path(r'^checkEmail/$', views.ChechEmailAPIView.as_view()),            # 检查邮箱否被占用

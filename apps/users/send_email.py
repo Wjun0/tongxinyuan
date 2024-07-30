@@ -1,4 +1,4 @@
-
+import base64
 import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
@@ -38,8 +38,10 @@ def send(to_email, code):
             <p>您在同心理心苑操作的验证码如下，请在5分钟内使用！</p>
             <p>code : {code}</p>
             """
+        encode_nicname = '"=?UTF-8?B?' + base64.b64encode("tong-psy".encode('utf-8')).decode('utf-8') + f'?="{sender}'
         message = MIMEText(mail_msg, 'html', 'utf-8')
-        message['From'] = Header('tong-psy', 'utf-8')
+        # message['From'] = Header('tong-psy', 'utf-8')
+        message['From'] = Header(encode_nicname)
         message['To'] = Header('收件人昵称', 'utf-8')
         subject = '同心理心苑'
         message['Subject'] = Header(subject, 'utf-8')
@@ -56,6 +58,10 @@ def send(to_email, code):
 
 
 if __name__ == '__main__':
-    send("wjwangjun0@163.com", "345678")
+    # send("2665254503@qq.com", "345678")
+    # send("wangjun12@sunline.cn", "345678")
+    # send("myprotonme998@proton.me", "345678")
+    # send("ex-wangjun628@pingan.com.cn", "345678")
+    pass
 
 

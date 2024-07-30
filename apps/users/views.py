@@ -960,6 +960,50 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIVi
             return Response({"detail": "success"})
         return Response({"detail": "bad request"}, 400)
 
+class MediaDeleteAPIView(CreateAPIView):
+    permission_classes = (isManagementPermission,)
+    serializer_class = MedaiSerializers
+    queryset = Media.objects.order_by("-id")
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        file_id = data.get('file_id', '')
+        type = data.get('type', '')
+        obj = self.get_queryset().filter(file_id=file_id).first()
+        if not obj:
+            return Response({"detail": "File not found."}, status=404)
+        if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+            if not operator_change_data(request, obj):
+                return Response({"detail": "没有权限操作该数据！"}, status=403)
+        if type == "logo":
+            try:
+                logo_name = obj.logo_name
+                p = os.path.join(settings.BASE_DIR, "media", "logo", logo_name)
+                os.remove(p)
+                obj.logo_id = ""
+                obj.logo_name = ""
+                obj.save()
+                return Response({"detail": "success"})
+            except Exception as e:
+                return Response({"detail": "文件不存在！"}, status=400)
+        elif type == "media":
+            try:
+                path = obj.path
+                logo_name = obj.logo_name
+                if logo_name:
+                    p = os.path.join(settings.BASE_DIR, "media", "logo", logo_name)
+                    os.remove(p)
+                p = os.path.join(settings.BASE_DIR, "media", "qrcode", path)
+                os.remove(p)
+                obj.delete()
+                return Response({"detail": "success"})
+            except Exception as e:
+                return Response({"detail": "文件不存在！"}, status=400)
+        elif type == "url":
+            obj.delete()
+            return Response({"detail": "success"})
+        return Response({"detail": "bad request"}, 400)
+
 
 class UserInfoAPIView(APIView):
     permission_classes = (FlushPermission,)
