@@ -296,7 +296,7 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
     permission_classes = (idAdminAndCheckerPermission, )
 
     def get_queryset(self):
-        queryset = User.objects.filter(~Q(role=100))
+        queryset = User.objects.filter(~Q(role=100)).order_by("-id")
         data = self.request.data
         name = data.get('name')
         user_name = data.get('user_name')
@@ -638,7 +638,7 @@ class UploadUrlMedioAPIView(CreateAPIView, UpdateAPIView):
         uid = ""
         logo_path = ""
         now = datetime.datetime.now()
-        name = name if name else f"{now.year}{now.month}{now.day}{''.join(random.choices(string.ascii_lowercase, k=2))}"
+        name = name if name else f"{now.strftime('%Y%m%d')}{random.randint(1111,9999)}{''.join(random.choices(string.ascii_lowercase, k=2))}"
         if time_limite not in [0, 1, "0", "1"]:
             return Response({"detail": "不支持该限制类型time_limite ！"}, status=400)
         if not original_url:
@@ -712,13 +712,16 @@ class UploadLogoAPIView(CreateAPIView):
         obj.save()
         return Response({"detail": "success ", "logo_id": uid, "url": settings.DOMAIN + "/user/download_logo/" + uid})
 
-class UploadQRcodeAPIView(CreateAPIView):
+class UploadQRcodeAPIView(CreateAPIView, UpdateAPIView):
     permission_classes = (isManagementPermission,)
     queryset = Media.objects.all()
     def post(self, request, *args, **kwargs):
         file = request.data.get("file")
         data = request.data
         file_id = data.get('file_id', '')
+        qrcode_size = data.get('qrcode_size', '')
+        qrcode_shape = data.get('qrcode_shape', '')
+        qrcode_site = data.get('qrcode_site', '')
         names = file.name.split('.')
         if names[-1] not in ["png", "jpg"]:
             return Response({"detail": "不支持该文件类型！"}, status=400)
@@ -731,9 +734,28 @@ class UploadQRcodeAPIView(CreateAPIView):
             f.write(file.read())
         obj.qrcode_id = uid
         obj.qrcode_name = file_path
-        f.update_time = datetime.datetime.now()
+        obj.qrcode_size = qrcode_size
+        obj.qrcode_shape = qrcode_shape
+        obj.qrcode_site = qrcode_site
+        obj.update_time = datetime.datetime.now()
         obj.save()
         return Response({"detail": "success ", "qrcode_id": uid, "url": settings.DOMAIN + "/user/download_qrcode/" + uid})
+
+    def put(self, request, *args, **kwargs):
+        data = request.data
+        file_id = data.get('file_id', '')
+        qrcode_size = data.get('qrcode_size', '')
+        qrcode_shape = data.get('qrcode_shape', '')
+        qrcode_site = data.get('qrcode_site', '')
+        obj = self.get_queryset().filter(file_id=file_id).first()
+        if not obj:
+            return Response({"detail": "File not found !"}, status=400)
+        obj.qrcode_size = qrcode_size
+        obj.qrcode_shape = qrcode_shape
+        obj.qrcode_site = qrcode_site
+        obj.update_time = datetime.datetime.now()
+        obj.save()
+        return Response({"detail": "success "})
 
 
 class QRcodeurlView(APIView):
@@ -836,10 +858,10 @@ class MediaListAPIView(ListAPIView):
     filterset_class = MediaListerFilter
     pagination_class = ResultsSetPagination
     serializer_class = MedaiSerializers
-    queryset = Media.objects.order_by("-id")
+    queryset = Media.objects.order_by("-update_time")
 
 
-class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView):
+class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
     permission_classes = (isManagementPermission, )
     serializer_class = MedaiSerializers
     queryset = Media.objects.order_by("-id")
@@ -921,45 +943,6 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIVi
         except Exception as e:
             return Response({"detail": "bad request !"}, status=400)
 
-    def delete(self, request, *args, **kwargs):
-        data = request.data
-        file_id = data.get('file_id', '')
-        type = data.get('type', '')
-        obj = self.get_queryset().filter(file_id=file_id).first()
-        if not obj:
-            return Response({"detail": "File not found."}, status=404)
-        if user_is_operator(request):  # 如果是运营人员，判断是否有权限
-            if not operator_change_data(request, obj):
-                return Response({"detail": "没有权限操作该数据！"}, status=403)
-        if type == "logo":
-            try:
-                logo_name = obj.logo_name
-                p = os.path.join(settings.BASE_DIR, "media", "logo", logo_name)
-                os.remove(p)
-                obj.logo_id = ""
-                obj.logo_name = ""
-                obj.save()
-                return Response({"detail": "success"})
-            except Exception as e:
-                return Response({"detail": "文件不存在！"}, status=400)
-        elif type == "media":
-            try:
-                path = obj.path
-                logo_name = obj.logo_name
-                if logo_name:
-                    p = os.path.join(settings.BASE_DIR, "media", "logo", logo_name)
-                    os.remove(p)
-                p = os.path.join(settings.BASE_DIR, "media", "qrcode", path)
-                os.remove(p)
-                obj.delete()
-                return Response({"detail": "success"})
-            except Exception as e:
-                return Response({"detail": "文件不存在！"}, status=400)
-        elif type == "url":
-            obj.delete()
-            return Response({"detail": "success"})
-        return Response({"detail": "bad request"}, 400)
-
 class MediaDeleteAPIView(CreateAPIView):
     permission_classes = (isManagementPermission,)
     serializer_class = MedaiSerializers
@@ -986,12 +969,26 @@ class MediaDeleteAPIView(CreateAPIView):
                 return Response({"detail": "success"})
             except Exception as e:
                 return Response({"detail": "文件不存在！"}, status=400)
+        elif type == "qrcode":
+            try:
+                p = os.path.join(settings.BASE_DIR, "media", "logo", obj.qrcode_name)
+                os.remove(p)
+                obj.qrcode_name = ""
+                obj.qrcode_id = ""
+                obj.save()
+                return Response({"detail": "success"})
+            except Exception as e:
+                return Response({"detail": "文件不存在！"}, status=400)
         elif type == "media":
             try:
                 path = obj.path
                 logo_name = obj.logo_name
+                qrcode_name = obj.qrcode_name
                 if logo_name:
                     p = os.path.join(settings.BASE_DIR, "media", "logo", logo_name)
+                    os.remove(p)
+                if qrcode_name:
+                    p = os.path.join(settings.BASE_DIR, "media", "logo", qrcode_name)
                     os.remove(p)
                 p = os.path.join(settings.BASE_DIR, "media", "qrcode", path)
                 os.remove(p)
