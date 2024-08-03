@@ -305,6 +305,8 @@ class CheckPWDandEmailView(CreateAPIView):
         email = data.get('email', '')
         type = data.get('type', '')
         user = self.get_queryset().filter(name=name).first()
+        if not user:
+            return Response({"detail": "用户不存在！"}, status=400)
         if type == "email":
             if user.email != email:
                 return Response({"detail": "邮箱需要与注册邮箱一致！"})
