@@ -23,16 +23,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-ryzyi3_9d5y)3qdiubio8fkuaqknxd32rz7&srp%l6=gr69%-z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # ALLOWED_HOSTS = ["*"]
 
-
-# Application definition
+##########   动态配置   ######
 WX_APPID = os.environ.get("APPID")      # 申请的微信appid
 WX_SECRET = os.environ.get("SECRET")    # 申请的微信secret
-DOMAIN = "https://manage.uat.tong-psy.com"      # 部署域名
-#DOMAIN = "http://127.0.0.1:8081"                # 部署域名
+
+DOMAIN = "https://manage.tong-psy.com"  # 部署域名
+
+###############################
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -47,12 +49,11 @@ INSTALLED_APPS = [
     'django_filters',
     'apps.users',
 ]
-
 CORS_ORIGIN_WHITELIST = (
     'http://127.0.0.1:80',
     'http://localhost:80',
-    'http://manage.uat.tong-psy.com:80',
-    'https://m.uat.tong-psy.com:443',
+    'http://manage.tong-psy.com:80',
+    'https://m.tong-psy.com:443',
 )
 
 REST_FRAMEWORK = {
@@ -120,8 +121,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 使用MySQL数据库
         'NAME': os.environ.get("MYSQL_NAME", "tong-psy"),          # 数据库名
-        'USER': os.environ.get("MYSQL_USER", "root"),              # 数据库用户
-        'PASSWORD': os.environ.get("MYSQL_PWD", 'mysql'),         # 数据库密码
+        'USER': os.environ.get("MYSQL_USER", "tong-psy"),              # 数据库用户
+        'PASSWORD': os.environ.get("MYSQL_PWD", 'phdEZkhskck5E4GF'),         # 数据库密码
         'HOST': os.environ.get("MYSQL_HOST", 'localhost'),         # 数据库主机
         'PORT': os.environ.get("MYSQL_PORT", '3306'),                # 数据库端口
     }

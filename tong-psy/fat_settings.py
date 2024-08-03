@@ -120,8 +120,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 使用MySQL数据库
         'NAME': os.environ.get("MYSQL_NAME", "tong-psy"),          # 数据库名
-        'USER': os.environ.get("MYSQL_USER", "root"),              # 数据库用户
-        'PASSWORD': os.environ.get("MYSQL_PWD", 'mysql'),         # 数据库密码
+        'USER': os.environ.get("MYSQL_USER", "tong-psy"),              # 数据库用户
+        'PASSWORD': os.environ.get("MYSQL_PWD", 'n7weCDeKwdXXehrB'),         # 数据库密码
         'HOST': os.environ.get("MYSQL_HOST", 'localhost'),         # 数据库主机
         'PORT': os.environ.get("MYSQL_PORT", '3306'),                # 数据库端口
     }

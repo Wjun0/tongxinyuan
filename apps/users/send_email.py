@@ -1,37 +1,17 @@
 import base64
 import smtplib
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.header import Header
 
 # 第三方 SMTP 服务
-mail_host = "smtp.163.com"           # 设置服务器
-mail_user = "wjwangjun0@163.com"        # 用户名
-mail_pass = "UENLEJCZYNAKKKOU"       # 口令
-sender = 'wjwangjun0@163.com'
-
-def send1(email, code):
-    receivers = [email]  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
-    mail_msg = f"""
-    <p>您注册同心理心苑验证码如下，请在5分钟内使用！</p>
-    <p>code : {code}</p>
-    """
-    message = MIMEText(mail_msg, 'html', 'utf-8')
-    message['From'] = Header("同心理心苑", 'utf-8')
-    # message['To'] = Header("测试", 'utf-8')
-    subject = '注册同心理心苑'
-    message['Subject'] = Header(subject, 'utf-8')
-
-    try:
-        smtpObj = smtplib.SMTP()
-        smtpObj.connect(mail_host, 465)  # 25 为 SMTP 端口号
-        smtpObj.login(mail_user, mail_pass)
-        smtpObj.sendmail(sender, receivers, message.as_string())
-        print("success !")
-    except smtplib.SMTPException as e:
-        print("error !")
+mail_host = "smtp.exmail.qq.com"           # 设置服务器
+mail_port = 587
+sender = 'jiakai@ji-psy.com'
+mail_pass = "h9CRKeGaCjxj5EGv"       # 口令
 
 
-def send(to_email, code):
+def send1(to_email, code):
     try:
         # 邮件对象创建
         mail_msg = f"""
@@ -56,12 +36,34 @@ def send(to_email, code):
     except Exception as e:
         print(e)
 
+def send(to_email, code):
+    # 创建邮件对象和设置邮件内容
+    message = MIMEMultipart("alternative")
+    message["Subject"] = "同心理心苑"
+    message["From"] = sender
+    message["To"] = to_email
+    mail_msg = f"""
+        <p>您注册同心理心苑验证码如下，请在5分钟内使用！</p>
+        <p>code : {code}</p>
+        """
+    # 添加正文到邮件对象
+    part1 = MIMEText(mail_msg, "html")
+    # 添加正文到邮件对象
+    message.attach(part1)
+    # 发送邮件
+    try:
+        # 创建SMTP服务器连接
+        with smtplib.SMTP(mail_host, mail_port) as server:
+            server.ehlo()  # 与服务器打招呼
+            server.starttls()  # 启用TLS
+            server.login(sender, mail_pass)  # 登录邮箱
+            server.sendmail(sender, to_email, message.as_string())  # 发送邮件
+            print("Email sent!")
+    except Exception as e:
+        print(f"Something went wrong: {e}")
 
 if __name__ == '__main__':
-    # send("2665254503@qq.com", "345678")
-    # send("wangjun12@sunline.cn", "345678")
-    # send("myprotonme998@proton.me", "345678")
-    # send("ex-wangjun628@pingan.com.cn", "345678")
+    # send("", "345678")
     pass
 
 

@@ -8,6 +8,7 @@ urlpatterns = [
     re_path(r'logout/$', views.LogoutAPIView.as_view()),         # 退出
     re_path(r'reflush/$', views.ReflushAPIView.as_view()),        # 刷新token
     re_path(r'forgetPwd/$', views.ForgetPdAPIView.as_view()),    # 忘记密码
+    re_path(r'changePwd/$', views.ChangePdAPIView.as_view()),    # 修改密码
     re_path(r'userList/$', views.UserAPIView.as_view()),          # 用户列表
     re_path(r'^userAudit/$', views.UserAuditAPIView.as_view()),     # 审核用户
     re_path(r'^upload/$', views.UploadMedioAPIView.as_view()),      # 上传音频生成二维码
@@ -16,7 +17,7 @@ urlpatterns = [
     re_path(r'^uploadQRcode/$', views.UploadQRcodeAPIView.as_view()),      # 上传二维码
     #path('download/<file_id>/', views.QRcodeurlView.as_view()),       # 下载音频|视频
     path('download/<file_id>/', strem_view.stream_video),               # 下载音频|视频
-    #path('download_tmp/<file_id>/', strem_view.tmp_stream_video),          # 下载音频|视频
+    path('download_tmp/<file_id>/', strem_view.PCstream_video),          # 下载音频|视频
     path('PCdownload/<file_id>/', strem_view.PCstream_video),               # 前端播放
     path('download_logo/<logo_id>/', views.DownloadLogoView.as_view()),    # 下载logo
     path('download_qrcode/<qrcode_id>/', views.DownloadQrcodeView.as_view()),    # 下载二维码

@@ -267,6 +267,33 @@ class ForgetPdAPIView(CreateAPIView):
         user.save()
         return Response({"detail": "success!"})
 
+class ChangePdAPIView(CreateAPIView):
+    permission_classes = (idAdminAndCheckerPermission,)
+    queryset = User.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        old_pwd = data.get('password', '')
+        pwd1 = data.get('password1', '')
+        pwd2 = data.get('password2', '')
+        if pwd1 != pwd2:
+            return Response({"detail": "两次密码不一致！"}, status=400)
+        token = request.META.get('HTTP_AUTHORIZATION')
+        try:
+            data = jwt_decode(token)
+            user_id = data.get("data", {}).get('user_id')
+            obj = User.objects.filter(user_id=user_id).first()
+            if not obj:
+                return Response({"detail": "两次密码不一致！"}, status=400)
+            if obj.password != old_pwd:
+                return Response({"detail": "原始密码不正确！"}, status=400)
+            obj.token = ""
+            obj.password = pwd1
+            obj.save()
+            return Response({"detail":"success"})
+        except Exception as e:
+            return Response({"detail": "bad request"}, status=400)
+
 
 class CheckPWDandEmailView(CreateAPIView):
     queryset = User.objects.all()
