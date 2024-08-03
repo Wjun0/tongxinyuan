@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-ryzyi3_9d5y)3qdiubio8fkuaqknxd32rz7&srp%l6=gr69%-z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["manage.tong-psy.com", "m.tong-psy.com"]
+ALLOWED_HOSTS = ["127.0.0.1", "api.tong-psy.com", "manage.tong-psy.com"]
 
 ##########   动态配置   ######
 WX_APPID = os.environ.get("APPID")      # 申请的微信appid

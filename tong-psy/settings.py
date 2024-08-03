@@ -25,14 +25,12 @@ SECRET_KEY = 'django-insecure-ryzyi3_9d5y)3qdiubio8fkuaqknxd32rz7&srp%l6=gr69%-z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-# ALLOWED_HOSTS = ["*"]
-
+ALLOWED_HOSTS = ["127.0.0.1"]
 
 # Application definition
 WX_APPID = os.environ.get("APPID")      # 申请的微信appid
 WX_SECRET = os.environ.get("SECRET")    # 申请的微信secret
-DOMAIN = "https://manage.uat.tong-psy.com"      # 部署域名
-#DOMAIN = "http://127.0.0.1:8081"                # 部署域名
+DOMAIN = "http://127.0.0.1:8081"                # 部署域名
 
 INSTALLED_APPS = [
     'django.contrib.admin',
