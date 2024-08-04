@@ -140,7 +140,11 @@ class UserAddAPIView(CreateAPIView):
                 if str(tag) == "1":
                     user.status = "used"
                 else:
-                    user.status = "pending"
+                    s = datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+                    if s < datetime.datetime.now():
+                        user.status = "used"
+                    else:
+                        user.status = "pending"
                     user.start_time = start_time
                     user.end_time = end_time
                 user.save()
@@ -258,7 +262,7 @@ class ForgetPdAPIView(CreateAPIView):
             pass
         else:
             return Response({"detail": "验证码错误！"}, status=400)
-        if pwd1==user.password or pwd1 in user.old_pwd.get('pwd', []):
+        if pwd1==user.password:
             return Response({"detail": "新密码不能与旧密码相同！"}, status=400)
         pwd_list = user.old_pwd.get('pwd', [])
         pwd_list.append(user.password)
@@ -484,7 +488,11 @@ class UserAuditAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
             obj.status = "used"
             obj.tag = 1
         else:
-            obj.status = "pending"
+            s = datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+            if s < datetime.datetime.now():
+                obj.status = "used"
+            else:
+                obj.status = "pending"
             obj.tag = 0
             obj.start_time = start_time
             obj.end_time = end_time
