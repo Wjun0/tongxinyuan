@@ -16,7 +16,7 @@ class FlushPermission(BasePermission):  # 定时任务获取用户信息的认�
             return False
         obj = User.objects.filter(user_id=user_id, token=token).first()
         if not obj:
-            raise PermissionDenied({"code": 4003, "detail": "用户已在其他地方登录！"})
+            raise PermissionDenied({"code": 4003, "detail":"账户已在别处登录！"})
         now = timezone.now()
         if obj.token_exp + datetime.timedelta(hours=24) > now:
             if obj.status == "used":
@@ -35,7 +35,7 @@ class LoginPermission(BasePermission):
             return False
         obj = User.objects.filter(user_id=user_id, token=token).first()
         if not obj:
-            raise PermissionDenied({"code": 4003, "detail": "用户已在其他地方登录！"})
+            raise PermissionDenied({"code": 4003, "detail":"账户已在别处登录！"})
         now = timezone.now()
         if obj.token_exp + datetime.timedelta(hours=24) > now:
             # if obj.start_time < now < obj.end_time and obj.status == "used":
@@ -57,7 +57,7 @@ class isAdminPermission(BasePermission):
             return False
         obj = User.objects.filter(user_id=user_id, token=token, role=1).first()
         if not obj:
-            raise PermissionDenied({"code": 4003, "detail":"用户已在其他地方登录！"})
+            raise PermissionDenied({"code": 4003, "detail":"账户已在别处登录！"})
         now = timezone.now()
         if obj.token_exp + datetime.timedelta(hours=24) > now:
             if obj.status == "used":
@@ -78,7 +78,7 @@ class isCheckerPermission(BasePermission):
             return False
         obj = User.objects.filter(user_id=user_id, token=token, role=2).first()
         if not obj:
-            raise PermissionDenied({"code": 4003, "detail":"用户已在其他地方登录！"})
+            raise PermissionDenied({"code": 4003, "detail":"账户已在别处登录！"})
         now = timezone.now()
         if obj.token_exp + datetime.timedelta(hours=24) > now:
             if obj.status == "used":
@@ -99,7 +99,7 @@ class isOperatorPermission(BasePermission):
             return False
         obj = User.objects.filter(user_id=user_id, token=token, role=3).first()
         if not obj:
-            raise PermissionDenied({"code": 4003, "detail":"用户已在其他地方登录！"})
+            raise PermissionDenied({"code": 4003, "detail":"账户已在别处登录！"})
         now = timezone.now()
         if obj.token_exp + datetime.timedelta(hours=24) > now:
             if obj.status == "used":
@@ -120,7 +120,7 @@ class idAdminAndCheckerPermission(BasePermission):
             return False
         obj = User.objects.filter(user_id=user_id, token=token).filter(Q(role=1) | Q(role=2)).first()
         if not obj:
-            raise PermissionDenied({"code": 4003, "detail":"用户已在其他地方登录！"})
+            raise PermissionDenied({"code": 4003, "detail":"账户已在别处登录！"})
         now = timezone.now()
         if obj.token_exp + datetime.timedelta(hours=24) > now:
             if obj.status == "used":
@@ -141,7 +141,7 @@ class isManagementPermission(BasePermission):
             return False
         obj = User.objects.filter(user_id=user_id, token=token, role__lte=3).first()
         if not obj:
-            raise PermissionDenied({"code": 4003, "detail": "用户已在其他地方登录！"})
+            raise PermissionDenied({"code": 4003, "detail":"账户已在别处登录！"})
         now = timezone.now()
         if obj.token_exp + datetime.timedelta(hours=24) > now:
             if obj.status == "used":
