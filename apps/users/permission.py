@@ -1,4 +1,5 @@
 from django.db.models import Q
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 from django.utils import timezone
 import datetime
@@ -11,14 +12,16 @@ class FlushPermission(BasePermission):  # 定时任务获取用户信息的认�
         try:
             data = jwt_decode(token)
             user_id = data.get("data", {}).get('user_id')
-            obj = User.objects.filter(user_id=user_id, token=token).first()
-            now = timezone.now()
-            if obj.token_exp + datetime.timedelta(hours=24) > now:
-                if obj.status == "used":
-                    return True
-            return False
         except Exception as e:
             return False
+        obj = User.objects.filter(user_id=user_id, token=token).first()
+        if not obj:
+            raise PermissionDenied({"code": 4003, "detail": "用户已在其他地方登录！"})
+        now = timezone.now()
+        if obj.token_exp + datetime.timedelta(hours=24) > now:
+            if obj.status == "used":
+                return True
+        return False
 
 
 class LoginPermission(BasePermission):
@@ -28,17 +31,20 @@ class LoginPermission(BasePermission):
         try:
             data = jwt_decode(token)
             user_id = data.get("data", {}).get('user_id')
-            obj = User.objects.filter(user_id=user_id, token=token).first()
-            now = timezone.now()
-            if obj.token_exp + datetime.timedelta(hours=24) > now:
-                # if obj.start_time < now < obj.end_time and obj.status == "used":
-                if obj.status == "used":
-                    obj.exp_time = datetime.datetime.now()
-                    obj.save()
-                    return True
-            return False
         except Exception as e:
             return False
+        obj = User.objects.filter(user_id=user_id, token=token).first()
+        if not obj:
+            raise PermissionDenied({"code": 4003, "detail": "用户已在其他地方登录！"})
+        now = timezone.now()
+        if obj.token_exp + datetime.timedelta(hours=24) > now:
+            # if obj.start_time < now < obj.end_time and obj.status == "used":
+            if obj.status == "used":
+                obj.exp_time = datetime.datetime.now()
+                obj.save()
+                return True
+        return False
+
 
 class isAdminPermission(BasePermission):
     # 管理员权限
@@ -47,16 +53,18 @@ class isAdminPermission(BasePermission):
         try:
             data = jwt_decode(token)
             user_id = data.get("data", {}).get('user_id')
-            obj = User.objects.filter(user_id=user_id, token=token, role=1).first()
-            now = timezone.now()
-            if obj.token_exp + datetime.timedelta(hours=24) > now:
-                if obj.status == "used":
-                    obj.exp_time = datetime.datetime.now()
-                    obj.save()
-                    return True
-            return False
         except Exception as e:
             return False
+        obj = User.objects.filter(user_id=user_id, token=token, role=1).first()
+        if not obj:
+            raise PermissionDenied({"code": 4003, "detail":"用户已在其他地方登录！"})
+        now = timezone.now()
+        if obj.token_exp + datetime.timedelta(hours=24) > now:
+            if obj.status == "used":
+                obj.exp_time = datetime.datetime.now()
+                obj.save()
+                return True
+        return False
 
 
 class isCheckerPermission(BasePermission):
@@ -66,16 +74,19 @@ class isCheckerPermission(BasePermission):
         try:
             data = jwt_decode(token)
             user_id = data.get("data", {}).get('user_id')
-            obj = User.objects.filter(user_id=user_id, token=token, role=2).first()
-            now = timezone.now()
-            if obj.token_exp + datetime.timedelta(hours=24) > now:
-                if obj.status == "used":
-                    obj.exp_time = datetime.datetime.now()
-                    obj.save()
-                    return True
-            return False
         except Exception as e:
             return False
+        obj = User.objects.filter(user_id=user_id, token=token, role=2).first()
+        if not obj:
+            raise PermissionDenied({"code": 4003, "detail":"用户已在其他地方登录！"})
+        now = timezone.now()
+        if obj.token_exp + datetime.timedelta(hours=24) > now:
+            if obj.status == "used":
+                obj.exp_time = datetime.datetime.now()
+                obj.save()
+                return True
+        return False
+
 
 class isOperatorPermission(BasePermission):
     # 运营人员
@@ -84,17 +95,18 @@ class isOperatorPermission(BasePermission):
         try:
             data = jwt_decode(token)
             user_id = data.get("data", {}).get('user_id')
-            obj = User.objects.filter(user_id=user_id, token=token, role=3).first()
-            now = timezone.now()
-            if obj.token_exp + datetime.timedelta(hours=24) > now:
-                if obj.status == "used":
-                    obj.exp_time = datetime.datetime.now()
-                    obj.save()
-                    return True
-            return False
         except Exception as e:
             return False
-
+        obj = User.objects.filter(user_id=user_id, token=token, role=3).first()
+        if not obj:
+            raise PermissionDenied({"code": 4003, "detail":"用户已在其他地方登录！"})
+        now = timezone.now()
+        if obj.token_exp + datetime.timedelta(hours=24) > now:
+            if obj.status == "used":
+                obj.exp_time = datetime.datetime.now()
+                obj.save()
+                return True
+        return False
 
 
 class idAdminAndCheckerPermission(BasePermission):
@@ -104,16 +116,18 @@ class idAdminAndCheckerPermission(BasePermission):
         try:
             data = jwt_decode(token)
             user_id = data.get("data", {}).get('user_id')
-            obj = User.objects.filter(user_id=user_id, token=token).filter(Q(role=1) | Q(role=2)).first()
-            now = timezone.now()
-            if obj.token_exp + datetime.timedelta(hours=24) > now:
-                if obj.status == "used":
-                    obj.exp_time = datetime.datetime.now()
-                    obj.save()
-                    return True
-            return False
         except Exception as e:
             return False
+        obj = User.objects.filter(user_id=user_id, token=token).filter(Q(role=1) | Q(role=2)).first()
+        if not obj:
+            raise PermissionDenied({"code": 4003, "detail":"用户已在其他地方登录！"})
+        now = timezone.now()
+        if obj.token_exp + datetime.timedelta(hours=24) > now:
+            if obj.status == "used":
+                obj.exp_time = datetime.datetime.now()
+                obj.save()
+                return True
+        return False
 
 
 class isManagementPermission(BasePermission):
@@ -123,14 +137,17 @@ class isManagementPermission(BasePermission):
         try:
             data = jwt_decode(token)
             user_id = data.get("data", {}).get('user_id')
-            obj = User.objects.filter(user_id=user_id, token=token, role__lte=3).first()
-            now = timezone.now()
-            if obj.token_exp + datetime.timedelta(hours=24) > now:
-                if obj.status == "used":
-                    obj.exp_time = datetime.datetime.now()
-                    obj.save()
-                    return True
-            return False
         except Exception as e:
             return False
+        obj = User.objects.filter(user_id=user_id, token=token, role__lte=3).first()
+        if not obj:
+            raise PermissionDenied({"code": 4003, "detail": "用户已在其他地方登录！"})
+        now = timezone.now()
+        if obj.token_exp + datetime.timedelta(hours=24) > now:
+            if obj.status == "used":
+                obj.exp_time = datetime.datetime.now()
+                obj.save()
+                return True
+        return False
+
 
