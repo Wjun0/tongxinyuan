@@ -316,7 +316,7 @@ class CheckPWDandEmailView(CreateAPIView):
                 return Response({"detail": "邮箱需要与注册邮箱一致！"})
             return Response({"detail": "success"})
         elif type == "pwd":
-            if pwd==user.password or pwd in user.old_pwd.get('pwd', []):
+            if pwd==user.password:
                 return Response({"detail": "新密码不能与旧密码相同！"})
             return Response({"detail": "success"})
         return Response({"detail": "bad request !"}, status=400)
@@ -440,10 +440,14 @@ class UserAPIView(CreateAPIView, ListAPIView, UpdateAPIView):
             obj.tag = 1
             obj.status = "used"
         else:
+            s = datetime.datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
+            if s < datetime.datetime.now():
+                obj.status = "used"
+            else:
+                obj.status = "pending"
             obj.tag = 0
             obj.start_time = start_time
             obj.end_time = end_time
-            obj.status = "pending"
         try:
             obj.save()
         except Exception as e:
