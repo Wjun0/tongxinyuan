@@ -163,5 +163,6 @@ def play_media(request, file_id):
     ############
     f_type = f.path.split('.')[-1]
     url = settings.DOMAIN + "/user/play/" + file_id + "/"
-    type = f"video/{f_type}"
+    audio_video = "video" if f_type in ["mp4", "flv", "avi", "mov"] else "audio"
+    type = f"{audio_video}/{f_type}"
     return render(request, 'play_media.html', context={"url": url, "type": type})
