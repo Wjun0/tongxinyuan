@@ -166,7 +166,7 @@ STATIC_ROOT = 'static/'
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 MEDIA_ROOT = 'media/'
-MEDIA_URL = os.path.join(BASE_DIR, 'media/')
+MEDIA_URL = os.path.join(BASE_DIR, 'media/qrcode/')
 # print(STATICFILES_DIRS)
 
 # Default primary key field type

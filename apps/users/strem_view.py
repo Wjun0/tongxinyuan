@@ -142,3 +142,26 @@ def PCstream_video(request, file_id):
         # return ajax.ajax_template(request, '1.html', {'url': url})
     resp['Accept-Ranges'] = 'bytes'
     return resp
+
+def play_media(request, file_id):
+    f = Media.objects.filter(file_id=file_id).first()
+    if not f:
+        # return HttpResponse('页面不存在', status=404)
+        return render(request, 'error.html', context={"message": "页面不存在"})
+    if f.time_limite == 1 or f.time_limite == "1":
+        now = timezone.now()
+        if f.start_time > now:
+            return render(request, 'error.html', context={"message": "页面未生效"})
+        if not f.start_time < now < f.end_time:
+            # return HttpResponse('页面已失效', status=400)
+            return render(request, 'error.html', context={"message": "页面已失效"})
+    ##########
+    # url 类型的requests 请求访问
+    if f.type == "url":
+        # return HttpResponse(get_url_response(f.original_url))
+        return HttpResponseRedirect(f.original_url)
+    ############
+    f_type = f.path.split('.')[-1]
+    url = settings.DOMAIN + "/user/play/" + file_id + "/"
+    type = f"video/{f_type}"
+    return render(request, 'play_media.html', context={"url": url, "type": type})

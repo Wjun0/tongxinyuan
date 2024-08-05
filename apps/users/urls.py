@@ -16,9 +16,13 @@ urlpatterns = [
     re_path(r'^uploadLogo/$', views.UploadLogoAPIView.as_view()),      # 上传封面
     re_path(r'^uploadQRcode/$', views.UploadQRcodeAPIView.as_view()),      # 上传二维码
     #path('download/<file_id>/', views.QRcodeurlView.as_view()),       # 下载音频|视频
-    path('download/<file_id>/', strem_view.stream_video),               # 下载音频|视频
+    # path('download/<file_id>/', strem_view.stream_video),               # 下载音频|视频
+    path('download/<file_id>/', strem_view.play_media),               # 下载音频|视频
+    #path('play/<file_id>/', strem_view.stream_video),                     # 下载音频|视频
+    path('play/<file_id>/', strem_view.play_media),                     # 下载音频|视频
+
     path('download_tmp/<file_id>/', strem_view.PCstream_video),          # 下载音频|视频
-    path('PCdownload/<file_id>/', strem_view.PCstream_video),               # 前端播放
+    path('PCdownload/<file_id>/', strem_view.PCstream_video),            # 前端播放
     path('download_logo/<logo_id>/', views.DownloadLogoView.as_view()),    # 下载logo
     path('download_qrcode/<qrcode_id>/', views.DownloadQrcodeView.as_view()),    # 下载二维码
     re_path(r'^mediaList/$', views.MediaListAPIView.as_view()),             # 返回上传文件列表
