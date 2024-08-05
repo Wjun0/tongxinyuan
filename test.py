@@ -4,9 +4,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # 邮件发送者和接收者
-sender_email = "jiakai@ji-psy.com"
+sender_email = "jixinli02@ji-psy.com"
 receiver_email = "2665254503@qq.com"
-password = "h9CRKeGaCjxj5EGv"
+password = "uj57NsfXkL7agkrt"
 # 发送邮件服务器配置
 smtp_server = "smtp.exmail.qq.com"  # 替换为你的邮件服务器
 port = 587  # 或者你使用的端口

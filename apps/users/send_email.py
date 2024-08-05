@@ -7,8 +7,8 @@ from email.header import Header
 # 第三方 SMTP 服务
 mail_host = "smtp.exmail.qq.com"           # 设置服务器
 mail_port = 587
-sender = 'jiakai@ji-psy.com'
-mail_pass = "h9CRKeGaCjxj5EGv"       # 口令
+sender = 'jixinli02@ji-psy.com'
+mail_pass = "uj57NsfXkL7agkrt"       # 口令
 
 
 def send1(to_email, code):
