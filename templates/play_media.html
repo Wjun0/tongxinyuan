@@ -2,12 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>同心理心苑</title>
+    <style>
+    /* 使视频宽度保持16:9的比例 */
+    video {
+        width: 100%; /* 视频宽度自适应容器宽度 */
+        height: auto; /* 高度自动按比例调整 */
+    }
+</style>
 </head>
 <body>
-<video width="1500" height="900" controls>
+<video controls>
   <source src="{{ url }}" type="{{ type }}">
-
   <!-
     <object data="movie.mp4" width="320" height="240">
       <embed src="movie.swf" width="320" height="240">
