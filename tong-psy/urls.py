@@ -28,6 +28,7 @@ from django.urls import re_path
 from django.views import static ##新增
 from django.conf import settings ##新增
 from rest_framework.permissions import BasePermission
+from apps.questions.views import UploadImage
 
 
 class MyOpenAPISchemaGenerator(OpenAPISchemaGenerator):
@@ -77,10 +78,11 @@ sche.start()
 
 urlpatterns = [
     #path('admin/', admin.site.urls),
-    re_path(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}, name='static'),
-    #re_path(r'^media/qrcode/(?P<path>.*)$', static.serve, {'document_root': settings.MEDIA_ROOT}, name='media'),
+    re_path(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}, name='static'),  # 前端静态资源
+    re_path(r'^media/image/(?P<path>.*)$', static.serve, {'document_root': settings.MEDIA_ROOT}, name='image'),  # 问卷图片
     #path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),   # 互动模式
     #path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),   # 文档模式
+    re_path(r'^upload_img/', UploadImage.as_view()),
     path('user/', include('apps.users.urls')),
     path('question/', include('apps.questions.urls')),
 ]

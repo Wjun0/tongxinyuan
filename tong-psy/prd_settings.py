@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'apps.users',
+    'apps.questions',
 ]
 CORS_ORIGIN_WHITELIST = (
     'http://127.0.0.1:80',
@@ -60,6 +61,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+    'EXCEPTION_HANDLER': 'apps.users.exceptions.exception_handler'
 }
 
 SWAGGER_SETTINGS = {
@@ -168,7 +170,7 @@ STATIC_ROOT = 'static/'
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
-MEDIA_ROOT = 'media/'
+MEDIA_ROOT = 'media/image/'
 MEDIA_URL = os.path.join(BASE_DIR, 'media/')
 # print(STATICFILES_DIRS)
 
