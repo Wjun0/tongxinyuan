@@ -11,9 +11,15 @@ value = eval(s)
 print(value)
 
 
+s2 = "{专制} + {独裁} + {D}"
+
 exp = 3>1 and 4>2 or 4>2
 print(exp)
 print(1)
 
 s = "我们我们我们我们我们我们我们我们我们"
 print(len(s))
+
+l = "\\"
+print("\\" == l)
+print('\\' == "\\\\")

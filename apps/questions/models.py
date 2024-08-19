@@ -59,6 +59,7 @@ class Calculate_Exp(models.Model):
     qt_id = models.CharField(max_length=128, default='', verbose_name="问卷类型id")
     exp_name = models.CharField(max_length=128, default='', verbose_name="因子名称")
     exp_type = models.CharField(max_length=128, default='', verbose_name="因子类型 数字|文本|字母")
+    exp = models.CharField(max_length=128, default='', verbose_name="表达式")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
 

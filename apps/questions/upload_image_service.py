@@ -9,7 +9,7 @@ def upload(request):
     file = request.data.get("file")
     data = request.data
     source = data.get('source', '')
-    if source not in ["background_img", "title_img", "result_img", "content_img"]:
+    if source not in ["background_img", "title_img", "content_img"]:
         raise Exception_("参数类型错误！")
     if not file:
         raise Exception_("文件不能为空！")

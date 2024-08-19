@@ -24,6 +24,7 @@ SECRET_KEY = 'django-insecure-ryzyi3_9d5y)3qdiubio8fkuaqknxd32rz7&srp%l6=gr69%-z
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
+APPEND_SLASH=False
 
 ALLOWED_HOSTS = ["127.0.0.1", "api.tong-psy.com", "manage.tong-psy.com"]
 

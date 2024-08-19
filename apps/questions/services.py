@@ -1,5 +1,5 @@
 from apps.questions.check_data_service import check_start_end_time, check_img
-from apps.questions.models import Question, Answer
+from apps.questions.models import Question, Answer, Calculate_Exp
 from apps.users.exceptions import Exception_
 
 
@@ -58,3 +58,22 @@ def add_question(request):
 
     return res
 
+
+def add_order_and_select_value(request):
+    data = request.data
+    order = data.get('order')
+    values = data.get('values')
+    for i in order:
+        Answer.objects.filter(q_id=i.get('q_id'), a_number=i.get('a_number')).update(next_q_id=i.get('next_q_id'))
+    for j in values:
+        Answer.objects.filter(q_id=j.get('q_id'), a_number=j.get('a_number')).update(value=j.get('value'))
+    return
+
+def add_calculate(request):
+    data = request.data
+    qt_id = data.get('qt_id')
+    exp = data.get('exp')
+    for i in exp:
+        i['qt_id'] = qt_id
+        Calculate_Exp.objects.create(**i)
+    return
