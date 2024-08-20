@@ -1,6 +1,11 @@
 from rest_framework import serializers
 from apps.questions.models import QuestionType
 
+class QuestionTypeListSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionType
+        fields = "__all__"
+
 class QuestionTypeSerializers(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
 

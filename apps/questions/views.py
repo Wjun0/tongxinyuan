@@ -1,3 +1,5 @@
+import uuid
+
 from django.shortcuts import render
 
 # Create your views here.
@@ -5,13 +7,15 @@ from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.response import Response
 
 from apps.questions.filters import QuestionTypeFilter
-from apps.questions.models import QuestionType, Question, Calculate_Exp, Answer
-from apps.questions.serizlizers import QuestionTypeSerializers, QuestionSerializers
+from apps.questions.models import QuestionType, Question, Calculate_Exp, Answer, QuestionType_tmp, Question_tmp
+from apps.questions.serizlizers import QuestionTypeSerializers, QuestionSerializers, QuestionTypeListSerializers
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
     add_calculate
 from apps.questions.upload_image_service import upload
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import isManagementPermission
+from apps.users.utils import token_to_name
+
 
 class UploadImage(CreateAPIView):
     permission_classes = (isManagementPermission,)
@@ -28,12 +32,20 @@ class ADDQuestionsTypeView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         if not add_question_type(request):
             return Response({"detail": "参数错误！"}, status=400)
+        u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        uid = str(uuid.uuid4())
         data = request.data
         data['status'] = "草稿"
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"detail": "success", "result": serializer.data})
+        data['status_tmp'] = "无"
+        data['u_id'] = uid
+        data['create_user'] = u_name
+        QuestionType_tmp.objects.create(**data)
+        res = QuestionType.objects.create(**data)
+        # serializer = self.get_serializer(data=request.data)
+        # serializer.is_valid(raise_exception=True)
+        # serializer.save()
+        result = {"u_id":res.u_id, "background_img": res.background_img, "title": res.title}
+        return Response({"detail": "success", "result": result})
 
 class ADDQuestionsView(CreateAPIView):
     queryset = Question.objects.all()
@@ -69,7 +81,7 @@ class ADDResultView(CreateAPIView):
 
 
 class GetquestionsView(ListAPIView):
-    queryset = Question.objects.all()
+    queryset = Question_tmp.objects.all()
     # permission_classes = (isManagementPermission,)
 
     def list(self, request, *args, **kwargs):
@@ -96,7 +108,7 @@ class GetquestionsView(ListAPIView):
 
 class IndexView(ListAPIView):
     queryset = QuestionType.objects.order_by('-update_time')
-    serializer_class = QuestionTypeSerializers
+    serializer_class = QuestionTypeListSerializers
     filterset_class = QuestionTypeFilter
     pagination_class = ResultsSetPagination
     permission_classes = (isManagementPermission,)
