@@ -1,3 +1,5 @@
+import uuid
+
 a1 = 10
 a2 = 5
 a3 = 3
@@ -23,3 +25,5 @@ print(len(s))
 l = "\\"
 print("\\" == l)
 print('\\' == "\\\\")
+ss = uuid.uuid4()
+print(ss)

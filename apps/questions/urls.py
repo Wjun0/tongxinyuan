@@ -5,10 +5,15 @@ from apps.questions import views
 urlpatterns = [
     re_path(r'^add_question_type/$', views.ADDQuestionsTypeView.as_view()), # 添加问题类型（第一步）
     re_path(r'^add_question/$', views.ADDQuestionsView.as_view()),          # 添加问题和选项 （第二步）
-    re_path(r'^get_questions/$', views.GetquestionsView.as_view()),         # 获取题号和选项值
+    re_path(r'^get_option_data/$', views.GetOptionView.as_view()),      # 获取选项个数
+
     re_path(r'^add_order_value/$', views.ADDOrderAndValueView.as_view()),  # 题目排序和录入分值 （第三步）
+    re_path(r'^get_questions/$', views.GetquestionsView.as_view()),         # 获取题号和选项值
     re_path(r'^add_calculate/$', views.ADDCalculateView.as_view()),        # 添加因子  （第三步）
-    re_path(r'^add_result/$', views.ADDResultView.as_view()),        # 添加不同维度结果
+    re_path(r'^add_result/$', views.ADDResultView.as_view()),              # 添加不同维度结果
+    re_path(r'^show_result/$', views.ShowResultView.as_view()),         # 预览结果 tmp表结果
+    re_path(r'^get_option_value/$', views.GetOptionValueView.as_view()),                # 预览结果 tmp表结果
+
 
 
 

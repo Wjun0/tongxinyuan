@@ -5,12 +5,14 @@ from django.shortcuts import render
 # Create your views here.
 from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.questions.filters import QuestionTypeFilter
-from apps.questions.models import QuestionType, Question, Calculate_Exp, Answer, QuestionType_tmp, Question_tmp
+from apps.questions.models import QuestionType, Question, Calculate_Exp, Option, QuestionType_tmp, Question_tmp, \
+    Option_tmp
 from apps.questions.serizlizers import QuestionTypeSerializers, QuestionSerializers, QuestionTypeListSerializers
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
-    add_calculate
+    add_calculate, add_result, show_result, get_option_data
 from apps.questions.upload_image_service import upload
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import isManagementPermission
@@ -56,8 +58,14 @@ class ADDQuestionsView(CreateAPIView):
         res = add_question(request)
         return Response({"detail": "success", "result": res})
 
+class GetOptionView(APIView):
+    permission_classes = (isManagementPermission,)
+    def get(self, request):
+        result = get_option_data(request)
+        return Response({"detail": "success", "result": result})
+
 class ADDOrderAndValueView(CreateAPIView):
-    queryset = Answer.objects.all()
+    queryset = Option.objects.all()
     permission_classes = (isManagementPermission,)
     def create(self, request, *args, **kwargs):
         add_order_and_select_value(request)
@@ -76,13 +84,20 @@ class ADDResultView(CreateAPIView):
     permission_classes = (isManagementPermission,)
 
     def create(self, request, *args, **kwargs):
+        add_result(request)
+        return Response({"detail": "success"})
 
-        return Response({"detail": "success 开发中"})
+class ShowResultView(CreateAPIView):
+    queryset = Question_tmp.objects.all()
+    permission_classes = (isManagementPermission,)
 
+    def create(self, request, *args, **kwargs):
+        result = show_result(request)
+        return Response({"detail": "success", "result": result})
 
 class GetquestionsView(ListAPIView):
     queryset = Question_tmp.objects.all()
-    # permission_classes = (isManagementPermission,)
+    permission_classes = (isManagementPermission,)
 
     def list(self, request, *args, **kwargs):
         qt_id = request.query_params.get("qt_id")
@@ -90,13 +105,13 @@ class GetquestionsView(ListAPIView):
         questions = []
         q_id_list = []
         for q in query:
-            questions.append({"number": q.number, "value": '#' + str(q.id)})
-            q_id_list.append(q.id)
-        ans = Answer.objects.filter(q_id__in=q_id_list)
+            questions.append({"number": q.number, "q_id": '#' + str(q.u_id)})
+            q_id_list.append(q.u_id)
+        ans = Option_tmp.objects.filter(q_id__in=q_id_list)
         an_set = set()
         value_list = []
         for an in ans:
-            if an.value not in an_set and an.value != '\\':
+            if an.value and an.value not in an_set and an.value != '\\':
                 an_set.add(an.value)
                 try:
                     float(an.value)
@@ -104,6 +119,12 @@ class GetquestionsView(ListAPIView):
                     value_list.append({"value": '{' + an.value + '}', "value_cn": '{' + an.value + '}' + '的个数'})
         data = {"question_number": questions, "value_list": value_list}
         return Response({"detail": "success", "result": data})
+
+
+class GetOptionValueView(APIView):
+
+    def get(self):
+        return
 
 
 class IndexView(ListAPIView):
