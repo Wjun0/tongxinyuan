@@ -16,8 +16,8 @@ class QuestionType(models.Model):
     test_time = models.CharField(max_length=32, default='', verbose_name="预计测试时间")
     use_count = models.IntegerField(default=0, verbose_name="已参与人数")
     source = models.CharField(max_length=255, default='', verbose_name="量表出处")
-    status = models.CharField(max_length=32, default='', verbose_name="状态 草稿|使用中")
-    status_tmp = models.CharField(max_length=32, default='', verbose_name="有无草稿 无|有草稿")
+    status = models.CharField(max_length=32, default='', verbose_name="状态 已上线|已暂停")
+    status_tmp = models.CharField(max_length=32, default='', verbose_name="已上线（有草稿）|已暂停（有草稿）")
     show_number = models.CharField(max_length=32, default='', verbose_name="曝光数")
     finish_number = models.CharField(max_length=32, default='', verbose_name="完成人数")
     update_user = models.CharField(max_length=32, default='', verbose_name="最近更新人")
@@ -44,7 +44,7 @@ class QuestionType_tmp(models.Model):
     test_time = models.CharField(max_length=32, default='', verbose_name="预计测试时间")
     use_count = models.IntegerField(default=0, verbose_name="已参与人数")
     source = models.CharField(max_length=255, default='', verbose_name="量表出处")
-    status = models.CharField(max_length=32, default='', verbose_name="状态 草稿|使用中")
+    status = models.CharField(max_length=32, default='', verbose_name="状态 已上线|已暂停")
     status_tmp = models.CharField(max_length=32, default='', verbose_name="有无草稿 无|有草稿")
     show_number = models.CharField(max_length=32, default='', verbose_name="曝光数")
     finish_number = models.CharField(max_length=32, default='', verbose_name="完成人数")
@@ -76,6 +76,7 @@ class Question(models.Model):
 
     class Meta:
         db_table = "tong_question"
+        unique_together = [['qt_id', 'number']]
 
 class Question_tmp(models.Model):
     # 问题表
@@ -94,6 +95,7 @@ class Question_tmp(models.Model):
 
     class Meta:
         db_table = "tong_question_tmp"
+        unique_together = [['qt_id', 'number']]
 
 class Option(models.Model):
     # 选项表
@@ -110,7 +112,7 @@ class Option(models.Model):
 
     class Meta:
         db_table = "tong_option"
-        unique_together = [['u_id', 'o_number']]
+        unique_together = [['q_id', 'o_number']]
 
 class Option_tmp(models.Model):
     # 选项表
@@ -127,7 +129,7 @@ class Option_tmp(models.Model):
 
     class Meta:
         db_table = "tong_option_tmp"
-        unique_together = [['u_id', 'o_number']]
+        unique_together = [['q_id', 'o_number']]
 
 class Calculate_Exp(models.Model):
     # 计算因子表

@@ -1,8 +1,10 @@
 import uuid
 
+from django.db.models import Q
+
 from apps.questions.check_data_service import check_start_end_time, check_img
 from apps.questions.models import Question, Option, Calculate_Exp, Question_tmp, Option_tmp, Calculate_Exp_tmp, \
-    Result_Title, Result_Title_tmp, Dimension, Dimension_tmp, QuestionType_tmp
+    Result_Title, Result_Title_tmp, Dimension, Dimension_tmp, QuestionType_tmp, QuestionType
 from apps.users.exceptions import Exception_
 
 
@@ -47,13 +49,13 @@ def add_question(request):
         q_data = {"u_id": q_uid,"number": q.get('number'), "qt_id": qt_id, "q_type": q.get('q_type'), "q_attr": q.get('q_attr'),
                   "q_title": q.get('q_title'), "q_title_html": q.get('q_title_html') ,"q_check_role": q.get('q_check_role')}
         cre = Question_tmp.objects.create(**q_data)
-        cre = Question.objects.create(**q_data)
+        # cre = Question.objects.create(**q_data)
         a_data_list = []
         for a in q.get('q_options'):
             a_uid = str(uuid.uuid4())
             a_data = {"u_id": a_uid, "q_id": q_uid, "o_number": a.get('o_number'), "o_content": a.get('o_content'), "o_html_content": a.get('o_html_content')}
             an_cre = Option_tmp.objects.create(**a_data)
-            an_cre = Option.objects.create(**a_data)
+            # an_cre = Option.objects.create(**a_data)
             a_data_list.append({"u_id": a_uid, "q_id": an_cre.q_id, "o_number": an_cre.o_number,
                                  "o_content": an_cre.o_content, "o_html_content": an_cre.o_html_content})
         res.append({"q_id": cre.u_id, "qt_id": cre.qt_id, "number": cre.number, "q_type":cre.q_type,
@@ -84,10 +86,10 @@ def add_order_and_select_value(request):
     order = data.get('order')
     values = data.get('values')
     for i in order:
-        Option.objects.filter(q_id=i.get('q_id'), o_number=i.get('o_number')).update(next_q_id=i.get('next_q_id'))
+        #Option.objects.filter(q_id=i.get('q_id'), o_number=i.get('o_number')).update(next_q_id=i.get('next_q_id'))
         Option_tmp.objects.filter(q_id=i.get('q_id'), o_number=i.get('o_number')).update(next_q_id=i.get('next_q_id'))
     for j in values:
-        Option.objects.filter(q_id=j.get('q_id'), o_number=j.get('o_number')).update(value=j.get('value'))
+        #Option.objects.filter(q_id=j.get('q_id'), o_number=j.get('o_number')).update(value=j.get('value'))
         Option_tmp.objects.filter(q_id=j.get('q_id'), o_number=j.get('o_number')).update(value=j.get('value'))
     return
 
@@ -97,9 +99,18 @@ def add_calculate(request):
     exp = data.get('exp')
     for i in exp:
         i['qt_id'] = qt_id
-        Calculate_Exp.objects.create(**i)
+        # Calculate_Exp.objects.create(**i)
         Calculate_Exp_tmp.objects.create(**i)
     return
+
+def get_calculate(request):
+    qt_id = request.query_params.get("qt_id")
+    exps = Calculate_Exp_tmp.objects.filter(qt_id=qt_id)
+    result = []
+    for e in exps:
+        ex = {"exp_id": e.u_id, "exp_name": e.exp_name, "exp_type": e.exp_type, "exp": e.exp}
+        result.append(ex)
+    return result
 
 def add_result(request):
     data = request.data
@@ -109,7 +120,7 @@ def add_result(request):
         uid = str(uuid.uuid4())
         res = {"u_id": uid, "qt_id": qt_id, "statement": r.get('statement', ''),
                "background_img": r.get('background_img',''), "result_img": r.get('result_img', '')}
-        Result_Title.objects.create(**res)
+        # Result_Title.objects.create(**res)
         Result_Title_tmp.objects.create(**res)
         for dim in r.get('dimession', []):
             dimension_number = dim.get('dimension_number', '')
@@ -124,14 +135,13 @@ def add_result(request):
                 dim_data = {"u_id": dim_u_id, 'qt_id': qt_id, 'r_id': uid, "dimension_number": dimension_number,
                             "dimension_name": dimension_name, "result_number": result_number,
                             "result_name": result_name, "result_desc": result_desc, "value":value}
-                Dimension.objects.create(**dim_data)
+                # Dimension.objects.create(**dim_data)
                 Dimension_tmp.objects.create(**dim_data)
     return
 
 
 def show_result(request):
-    data = request.data
-    qt_id = data.get('qt_id')
+    qt_id = request.query_params.get("qt_id")
     result = {}
     qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
     if qt:
@@ -184,9 +194,70 @@ def show_result(request):
             dim_tp = {"background_img":background_img, "statement":statement, "result_img":result_img, "dimensions": dimensions}
             step4.append(dim_tp)
         result["step4"] = step4
-
-
-
-
-
     return result
+
+
+def copy_tmp_table(qt_id):
+    q = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+    QuestionType.objects.update_or_create(u_id=qt_id, defaults={"background_img": q.background_img, 'title_img':q.title_img,
+                        'title':q.title, 'test_value':q.test_value, 'test_value_html':q.test_value_html,
+                        'q_number':q.q_number, 'test_time':q.test_time, 'use_count':q.use_count, 'source':q.source,
+                        'status': q.status, 'status_tmp': q.status_tmp, 'show_number':q.show_number, 'finish_number': q.finish_number,
+                        'update_user': q.update_user, 'create_user':q.create_user, 'check_user':q.check_user, 'start_time':q.start_time,
+                        'end_time':q.end_time, 'create_time': q.create_time, 'update_time': q.update_time})
+    qq = Question_tmp.objects.filter(qt_id=qt_id)
+    q_uid_list = []
+    for i in qq:
+        q_uid_list.append(i.u_id)  # 记录更新的id,不在里面的需要删除
+        Question.objects.update_or_create(qt_id=qt_id, u_id=i.u_id, defaults={'q_type':i.q_type,
+                        'q_attr': i.q_attr, 'q_value_type':i.q_value_type, 'q_title': i.q_title,
+                        'q_title_html':i.q_title_html, 'number':i.number, 'q_check_role':i.q_check_role,
+                        'create_time': i.create_time, 'update_time':i.update_time})
+    Question.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=q_uid_list)).delete()
+
+    ops = Option_tmp.objects.filter(q_id__in=q_uid_list)
+    o_uid_list = []
+    for j in ops:
+        o_uid_list.append(j.u_id)
+        Option.objects.update_or_create(q_id=j.q_id, u_id=j.u_id, defaults={
+            'o_number':j.o_number, 'o_content':j.o_content, 'o_html_content':j.o_html_content,
+            'next_q_id': j.next_q_id, 'value':j.value, 'create_time':j.create_time, 'update_time': j.update_time
+        })
+    Option.objects.filter(q_id__in=q_uid_list).filter(~Q(u_id__in=o_uid_list)).delete()
+
+    cas = Calculate_Exp_tmp.objects.filter(qt_id=qt_id)
+    ca_uid_list = []
+    for m in cas:
+        ca_uid_list.append(m.u_id)
+        Calculate_Exp.objects.update_or_create(qt_id=qt_id, u_id=m.u_id, defaults={
+            "exp_name": m.exp_name, 'exp_type':m.exp_type, 'exp': m.exp,
+            'create_time': m.create_time, 'update_time':m.update_time
+        })
+    Calculate_Exp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=ca_uid_list)).delete()
+
+    res = Result_Title_tmp.objects.filter(qt_id=qt_id)
+    res_uid_list = []
+    for r in res:
+        res_uid_list.append(r.u_id)
+        Result_Title.objects.update_or_create(qt_id=qt_id, u_id=r.u_id, defaults={
+            'background_img': r.background_img, 'statement': r.statement,
+            'result_img': r.result_img, 'create_time': r.create_time, 'update_time':r.update_time
+        })
+    Result_Title.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=res_uid_list))
+
+    dim = Dimension_tmp.objects.filter(qt_id=qt_id, r_id__in=res_uid_list)
+    dim_uid_list = []
+    for d in dim:
+        dim_uid_list.append(d.u_id)
+        Dimension.objects.update_or_create(qt_id=qt_id, u_id=d.u_id, defaults={
+            'r_id': d.r_id, 'dimension_number': d.dimension_number, 'dimension_name':d.dimension_name,
+            'result_number': d.result_number, 'result_name': d.result_name, 'result_name_html':d.result_name_html,
+            'result_desc': d.result_desc, 'result_desc_html': d.result_desc_html, 'value': d.value
+        })
+    Dimension.objects.filter(qt_id=qt_id, r_id__in=res_uid_list).filter(~Q(u_id__in=dim_uid_list)).delete()
+
+    return
+
+
+
+

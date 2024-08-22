@@ -3,6 +3,7 @@ import uuid
 from django.shortcuts import render
 
 # Create your views here.
+from django.utils import timezone
 from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,10 +13,10 @@ from apps.questions.models import QuestionType, Question, Calculate_Exp, Option,
     Option_tmp
 from apps.questions.serizlizers import QuestionTypeSerializers, QuestionSerializers, QuestionTypeListSerializers
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
-    add_calculate, add_result, show_result, get_option_data
+    add_calculate, add_result, show_result, get_option_data, get_calculate, copy_tmp_table
 from apps.questions.upload_image_service import upload
 from apps.users.pagenation import ResultsSetPagination
-from apps.users.permission import isManagementPermission
+from apps.users.permission import isManagementPermission, idAdminAndCheckerPermission
 from apps.users.utils import token_to_name
 
 
@@ -41,8 +42,8 @@ class ADDQuestionsTypeView(CreateAPIView):
         data['status_tmp'] = "无"
         data['u_id'] = uid
         data['create_user'] = u_name
-        QuestionType_tmp.objects.create(**data)
-        res = QuestionType.objects.create(**data)
+        res = QuestionType_tmp.objects.create(**data)
+        # res = QuestionType.objects.create(**data)
         # serializer = self.get_serializer(data=request.data)
         # serializer.is_valid(raise_exception=True)
         # serializer.save()
@@ -71,13 +72,17 @@ class ADDOrderAndValueView(CreateAPIView):
         add_order_and_select_value(request)
         return Response({"detail": "success"})
 
-class ADDCalculateView(CreateAPIView):
+class ADDCalculateView(CreateAPIView, ListAPIView):
     queryset = Calculate_Exp.objects.all()
     permission_classes = (isManagementPermission,)
 
     def create(self, request, *args, **kwargs):
         add_calculate(request)
         return Response({"detail": "success"})
+
+    def list(self, request, *args, **kwargs):
+        result = get_calculate(request)
+        return Response({"detail": "success", "result":result})
 
 class ADDResultView(CreateAPIView):
     queryset = Calculate_Exp.objects.all()
@@ -87,13 +92,14 @@ class ADDResultView(CreateAPIView):
         add_result(request)
         return Response({"detail": "success"})
 
-class ShowResultView(CreateAPIView):
+class ShowResultView(APIView):
     queryset = Question_tmp.objects.all()
     permission_classes = (isManagementPermission,)
 
-    def create(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         result = show_result(request)
         return Response({"detail": "success", "result": result})
+
 
 class GetquestionsView(ListAPIView):
     queryset = Question_tmp.objects.all()
@@ -120,15 +126,41 @@ class GetquestionsView(ListAPIView):
         data = {"question_number": questions, "value_list": value_list}
         return Response({"detail": "success", "result": data})
 
+class SubmitCheckView(CreateAPIView): # 提交审核
+    queryset = Question_tmp.objects.all()
+    permission_classes = (isManagementPermission,)
 
-class GetOptionValueView(APIView):
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        qt_id = data.get('qt_id')
+        QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="审核中")
+        return Response({"detail": "success"})
 
-    def get(self):
-        return
+class SubmitCheckResultView(CreateAPIView):
+    queryset = Question_tmp.objects.all()
+    permission_classes = (idAdminAndCheckerPermission,)
 
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        qt_id = data.get('qt_id')
+        status = data.get('status')
+        if status == "已拒绝":
+            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="已拒绝")
+        if status == "已生效":
+            obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+            now = timezone.now()
+            if obj.start_time < now < obj.end_time:
+                obj.status = "已上线"
+                obj.status_tmp = "已上线"
+                obj.save()
+                # 将tmp表导入到正式表
+                copy_tmp_table(qt_id)
+                return Response({"detail": "success"})
+            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="待生效")
+        return Response({"detail": "success"})
 
 class IndexView(ListAPIView):
-    queryset = QuestionType.objects.order_by('-update_time')
+    queryset = QuestionType_tmp.objects.order_by('-update_time')
     serializer_class = QuestionTypeListSerializers
     filterset_class = QuestionTypeFilter
     pagination_class = ResultsSetPagination
