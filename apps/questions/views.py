@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from apps.questions.filters import QuestionTypeFilter
 from apps.questions.models import QuestionType, Question, Calculate_Exp, Option, QuestionType_tmp, Question_tmp, \
     Option_tmp
-from apps.questions.serizlizers import QuestionTypeSerializers, QuestionSerializers, QuestionTypeListSerializers
+from apps.questions.serizlizers import QuestionTypeSerializers, QuestionSerializers, QuestionTypeTMPListSerializers
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
     add_calculate, add_result, show_result, get_option_data, get_calculate, copy_tmp_table
 from apps.questions.upload_image_service import upload
@@ -63,6 +63,12 @@ class GetOptionView(APIView):
     permission_classes = (isManagementPermission,)
     def get(self, request):
         result = get_option_data(request)
+        return Response({"detail": "success", "result": result})
+
+class GetOptionsView(APIView):
+    permission_classes = (isManagementPermission,)
+    def get(self, request):
+        result = get_question_option(request)
         return Response({"detail": "success", "result": result})
 
 class ADDOrderAndValueView(CreateAPIView):
@@ -161,7 +167,7 @@ class SubmitCheckResultView(CreateAPIView):
 
 class IndexView(ListAPIView):
     queryset = QuestionType_tmp.objects.order_by('-update_time')
-    serializer_class = QuestionTypeListSerializers
+    serializer_class = QuestionTypeTMPListSerializers
     filterset_class = QuestionTypeFilter
     pagination_class = ResultsSetPagination
     permission_classes = (isManagementPermission,)

@@ -71,6 +71,9 @@ class Question(models.Model):
     q_title_html = models.TextField(default='', verbose_name="问卷标题")
     number = models.CharField(max_length=128, default='', verbose_name="题目序号 问题1|问题2")  # 后面根据序号答题
     q_check_role = models.CharField(max_length=128, default='', verbose_name="校验规则 无|性别|年龄")
+    min_age = models.CharField(max_length=128, default='', verbose_name="最小年龄")
+    max_age = models.CharField(max_length=128, default='', verbose_name="最大年龄")
+    sex = models.CharField(max_length=128, default='', verbose_name="性别")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
 
@@ -90,6 +93,9 @@ class Question_tmp(models.Model):
     q_title_html = models.TextField(default='', verbose_name="问卷标题")
     number = models.CharField(max_length=128, default='', verbose_name="题目序号 问题1|问题2")  # 后面根据序号答题
     q_check_role = models.CharField(max_length=128, default='', verbose_name="校验规则 无|性别|年龄")
+    min_age = models.CharField(max_length=128, default='', verbose_name="最小年龄")
+    max_age = models.CharField(max_length=128, default='', verbose_name="最大年龄")
+    sex = models.CharField(max_length=128, default='', verbose_name="性别")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
 

@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from apps.questions.models import QuestionType
+from apps.questions.models import QuestionType, QuestionType_tmp
 
-class QuestionTypeListSerializers(serializers.ModelSerializer):
+
+class QuestionTypeTMPListSerializers(serializers.ModelSerializer):
     class Meta:
-        model = QuestionType
+        model = QuestionType_tmp
         fields = "__all__"
 
 class QuestionTypeSerializers(serializers.ModelSerializer):

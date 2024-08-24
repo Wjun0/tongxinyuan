@@ -47,7 +47,8 @@ def add_question(request):
     for q in questions:
         q_uid = str(uuid.uuid4())
         q_data = {"u_id": q_uid,"number": q.get('number'), "qt_id": qt_id, "q_type": q.get('q_type'), "q_attr": q.get('q_attr'),
-                  "q_title": q.get('q_title'), "q_title_html": q.get('q_title_html') ,"q_check_role": q.get('q_check_role')}
+                  "q_title": q.get('q_title'), "q_title_html": q.get('q_title_html') ,"q_check_role": q.get('q_check_role'),
+                  "min_age": q.get('min_age'), 'max_age': q.get('max_age'), 'sex': q.get('sex')}
         cre = Question_tmp.objects.create(**q_data)
         # cre = Question.objects.create(**q_data)
         a_data_list = []
@@ -79,6 +80,13 @@ def get_option_data(request):
         result.append({"q_id": q.u_id, "number": q.number, "q_check_role": q.q_check_role, "options": ops_list})
     return result
 
+def get_question_option(request):
+    q_id = request.query_params.get("q_id")
+    ops = Option_tmp.objects.filter(q_id=q_id)
+    result = []
+    for op in ops:
+        result.append({"o_id": op.u_id, "o_number": op.o_number, "value": op.value})
+    return result
 
 
 def add_order_and_select_value(request):
@@ -212,6 +220,7 @@ def copy_tmp_table(qt_id):
         Question.objects.update_or_create(qt_id=qt_id, u_id=i.u_id, defaults={'q_type':i.q_type,
                         'q_attr': i.q_attr, 'q_value_type':i.q_value_type, 'q_title': i.q_title,
                         'q_title_html':i.q_title_html, 'number':i.number, 'q_check_role':i.q_check_role,
+                        "min_age": i.min_age,'max_age': i.max_age, 'sex': i.sex,
                         'create_time': i.create_time, 'update_time':i.update_time})
     Question.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=q_uid_list)).delete()
 

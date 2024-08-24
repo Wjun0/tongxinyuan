@@ -5,7 +5,8 @@ from apps.questions import views
 urlpatterns = [
     re_path(r'^add_question_type/$', views.ADDQuestionsTypeView.as_view()), # 添加问题类型（第一步）
     re_path(r'^add_question/$', views.ADDQuestionsView.as_view()),          # 添加问题和选项 （第二步）
-    re_path(r'^get_option_data/$', views.GetOptionView.as_view()),          # 获取选项个数
+    re_path(r'^get_option_data/$', views.GetOptionView.as_view()),          # 获取问卷和选项个数
+    re_path(r'^get_options/$', views.GetOptionsView.as_view()),             # 获取问题下的选项个数
     re_path(r'^add_order_value/$', views.ADDOrderAndValueView.as_view()),  # 题目排序和录入分值 （第三步）
     re_path(r'^get_questions/$', views.GetquestionsView.as_view()),         # 获取题号和选项值
     re_path(r'^add_calculate/$', views.ADDCalculateView.as_view()),        # 添加因子（第三步） | 获取因子结果
