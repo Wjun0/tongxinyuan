@@ -111,7 +111,7 @@ class Option(models.Model):
     o_number = models.CharField(max_length=32, default='', verbose_name="A|B|C|D|E|F选项")
     o_content = models.TextField(default='', verbose_name="选项描述")
     o_html_content = models.TextField(default='', verbose_name="选项描述富文本")
-    next_q_id = models.IntegerField(default=0, verbose_name="下一题序号")  # 顺序时，下一题为0
+    next_q_id = models.CharField(max_length=128, default='', verbose_name="下一题u_id")
     value = models.CharField(max_length=32, default='', verbose_name="分值或类型")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
@@ -128,7 +128,7 @@ class Option_tmp(models.Model):
     o_number = models.CharField(max_length=32, default='', verbose_name="A|B|C|D|E|F选项")
     o_content = models.TextField(default='', verbose_name="选项描述")
     o_html_content = models.TextField(default='', verbose_name="选项描述富文本")
-    next_q_id = models.IntegerField(default=0, verbose_name="下一题序号")  # 顺序时，下一题为0
+    next_q_id = models.CharField(max_length=128, default='', verbose_name="下一题u_id")
     value = models.CharField(max_length=32, default='', verbose_name="分值或类型")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')

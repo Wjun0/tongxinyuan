@@ -87,7 +87,7 @@ urlpatterns = [
     re_path(r'^upload_img/', UploadImage.as_view()),
     path('user/', include('apps.users.urls')),
     path('question/', include('apps.questions.urls')),
-    path('v1/', include('apps.wechats.urls')),
+    path('wechat/v1/', include('apps.wechats.urls')),
 ]
 
 

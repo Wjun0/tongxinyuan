@@ -7,17 +7,13 @@ class QuestionTypeTMPListSerializers(serializers.ModelSerializer):
         model = QuestionType_tmp
         fields = "__all__"
 
-class QuestionTypeSerializers(serializers.ModelSerializer):
-    id = serializers.CharField(read_only=True)
+class QuestionTypeTMPSerializers(serializers.ModelSerializer):
 
     class Meta:
-        model = QuestionType
-        fields = ["id",'background_img', 'title_img', 'title', 'test_value',
-                  'q_number', 'test_time', 'use_count', 'source',
-                  'status', 'start_time', 'end_time']
-        extra_kwargs = {
-            'background_img': {'allow_null': True}
-        }
+        model = QuestionType_tmp
+        fields = ['u_id', 'start_time', 'end_time', 'background_img', 'title_img', 'title', 'test_value',
+                  'test_value_html' ,'q_number', 'test_time', 'use_count', 'source', 'status']
+
 
 class QuestionSerializers(serializers.ModelSerializer):
 

@@ -8,10 +8,11 @@ from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.questions.filters import QuestionTypeFilter
+from apps.questions.filters import QuestionTypetmpFilter
 from apps.questions.models import QuestionType, Question, Calculate_Exp, Option, QuestionType_tmp, Question_tmp, \
     Option_tmp
-from apps.questions.serizlizers import QuestionTypeSerializers, QuestionSerializers, QuestionTypeTMPListSerializers
+from apps.questions.serizlizers import QuestionSerializers, QuestionTypeTMPListSerializers, \
+    QuestionTypeTMPSerializers
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
     add_calculate, add_result, show_result, get_option_data, get_calculate, copy_tmp_table, get_question_option
 from apps.questions.upload_image_service import upload
@@ -27,26 +28,47 @@ class UploadImage(CreateAPIView):
         file_id, file_name = upload(request)
         return Response({"file_id": file_id, "file_name": file_name})
 
-class ADDQuestionsTypeView(CreateAPIView):
-    queryset =  QuestionType.objects.all()
-    serializer_class = QuestionTypeSerializers
+class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
+    queryset =  QuestionType.objects.order_by('id')
+    serializer_class = QuestionTypeTMPSerializers
     permission_classes = (isManagementPermission,)
+
+    def list(self, request, *args, **kwargs):
+        qt_id = request.query_params.get("qt_id")
+        qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+        if not qt:
+            return Response({"detail": "数据不存在！"}, status=400)
+        queryset = QuestionType_tmp.objects.filter(u_id=qt_id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         if not add_question_type(request):
             return Response({"detail": "参数错误！"}, status=400)
         u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
-        uid = str(uuid.uuid4())
         data = request.data
-        data['status'] = "草稿"
-        data['status_tmp'] = "无"
+        u_id = data.get('qt_id', '')
+        if u_id: # 更新逻辑
+            qt = QuestionType_tmp.objects.filter(u_id=u_id).first()
+            if qt:
+                if qt.status == "已上线":
+                    status_tmp = "已上线（有草稿）"
+                elif qt.status == "已暂停":
+                    status_tmp = "已暂停（有草稿）"
+                else:
+                    status_tmp = "草稿"
+                data['status_tmp'] = status_tmp
+                data['update_user'] = u_name
+                QuestionType_tmp.objects.update_or_create(u_id=u_id, defaults=data)
+                return Response({"detail": "success"})
+        # else: # 新增逻辑
+        uid = str(uuid.uuid4())
+        data['status'] = "无"
+        data['status_tmp'] = "草稿"
         data['u_id'] = uid
         data['create_user'] = u_name
+        data['update_user'] = u_name
         res = QuestionType_tmp.objects.create(**data)
-        # res = QuestionType.objects.create(**data)
-        # serializer = self.get_serializer(data=request.data)
-        # serializer.is_valid(raise_exception=True)
-        # serializer.save()
         result = {"u_id":res.u_id, "background_img": res.background_img, "title": res.title}
         return Response({"detail": "success", "result": result})
 
@@ -168,7 +190,7 @@ class SubmitCheckResultView(CreateAPIView):
 class IndexView(ListAPIView):
     queryset = QuestionType_tmp.objects.order_by('-update_time')
     serializer_class = QuestionTypeTMPListSerializers
-    filterset_class = QuestionTypeFilter
+    filterset_class = QuestionTypetmpFilter
     pagination_class = ResultsSetPagination
     permission_classes = (isManagementPermission,)
 

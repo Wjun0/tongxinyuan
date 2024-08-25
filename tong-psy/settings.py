@@ -29,9 +29,12 @@ APPEND_SLASH=False
 ALLOWED_HOSTS = ["127.0.0.1"]
 
 # Application definition
-WX_APPID = os.environ.get("APPID")      # 申请的微信appid
-WX_SECRET = os.environ.get("SECRET")    # 申请的微信secret
+# WX_APPID = os.environ.get("APPID")      # 申请的微信appid
+# WX_SECRET = os.environ.get("SECRET")    # 申请的微信secret
 DOMAIN = "http://127.0.0.1:8081"                # 部署域名
+
+WX_APPID = "wx28d12404872bd1b8"
+WX_SECRET = "7b687309c4cae23b0fdc081dbc4e9bcc"
 
 INSTALLED_APPS = [
     'django.contrib.admin',

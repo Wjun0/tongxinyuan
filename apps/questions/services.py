@@ -50,22 +50,16 @@ def add_question(request):
                   "q_title": q.get('q_title'), "q_title_html": q.get('q_title_html') ,"q_check_role": q.get('q_check_role'),
                   "min_age": q.get('min_age'), 'max_age': q.get('max_age'), 'sex': q.get('sex')}
         cre = Question_tmp.objects.create(**q_data)
-        # cre = Question.objects.create(**q_data)
         a_data_list = []
         for a in q.get('q_options'):
             a_uid = str(uuid.uuid4())
             a_data = {"u_id": a_uid, "q_id": q_uid, "o_number": a.get('o_number'), "o_content": a.get('o_content'), "o_html_content": a.get('o_html_content')}
             an_cre = Option_tmp.objects.create(**a_data)
-            # an_cre = Option.objects.create(**a_data)
             a_data_list.append({"u_id": a_uid, "q_id": an_cre.q_id, "o_number": an_cre.o_number,
                                  "o_content": an_cre.o_content, "o_html_content": an_cre.o_html_content})
         res.append({"q_id": cre.u_id, "qt_id": cre.qt_id, "number": cre.number, "q_type":cre.q_type,
                     "q_attr": cre.q_attr, "q_title": cre.q_attr, "q_check_role": cre.q_check_role,
                     "options": a_data_list})
-            # a_data_list.append(Answer(**a_data))
-        # an = Answer.objects.bulk_create(a_data_list)
-        # print(an)
-
     return res
 
 def get_option_data(request):
