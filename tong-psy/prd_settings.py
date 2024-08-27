@@ -29,8 +29,10 @@ APPEND_SLASH=False
 ALLOWED_HOSTS = ["127.0.0.1", "api.tong-psy.com", "m.tong-psy.com", "manage.tong-psy.com"]
 
 ##########   动态配置   ######
-WX_APPID = os.environ.get("APPID")      # 申请的微信appid
-WX_SECRET = os.environ.get("SECRET")    # 申请的微信secret
+# WX_APPID = os.environ.get("APPID")      # 申请的微信appid
+# WX_SECRET = os.environ.get("SECRET")    # 申请的微信secret
+WX_APPID = "wx9026409e86a6e43c"
+WX_SECRET = "9f2a942292ca7279911f9a26a55085cb"
 
 DOMAIN = "https://api.tong-psy.com"     # 部署域名
 

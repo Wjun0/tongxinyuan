@@ -36,7 +36,8 @@ class LoginAPIView(CreateAPIView):
             User.objects.update_or_create(user_id=openid, defaults=d)
             return Response({"detail": "success", "data":{"access_token": access_token, "refresh_token": refresh_token}})
         except Exception as e:
-            print(e)
+            logger = logging.getLogger(__name__)
+            logger.error(e)
             return Response({"detail": "无效的code"}, status=400)
 
 class IndexView(ListAPIView):
@@ -50,9 +51,9 @@ class DetailView(ListAPIView):
     queryset = QuestionType.objects.order_by('update_time')
 
     def list(self, request, *args, **kwargs):
-        data = request.query_param
-        qt_id = data.get("qt_id")
-        qt = self.get_queryset().filter(qt_id=qt_id).first()
+        data = request.query_params
+        qt_id = data.get("u_id")
+        qt = self.get_queryset().filter(u_id=qt_id).first()
         if not qt:
             return Response({"detail": "问卷不存在！"}, status=400)
         now = timezone.now()

@@ -11,8 +11,8 @@ from rest_framework.views import APIView
 from apps.questions.filters import QuestionTypetmpFilter
 from apps.questions.models import QuestionType, Question, Calculate_Exp, Option, QuestionType_tmp, Question_tmp, \
     Option_tmp
-from apps.questions.serizlizers import QuestionSerializers, QuestionTypeTMPListSerializers, \
-    QuestionTypeTMPSerializers
+from apps.questions.serizlizers import QuestionTypeTMPListSerializers, \
+    QuestionTypeTMPSerializers, QuestionTMPSerializers
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
     add_calculate, add_result, show_result, get_option_data, get_calculate, copy_tmp_table, get_question_option
 from apps.questions.upload_image_service import upload
@@ -72,10 +72,16 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
         result = {"u_id":res.u_id, "background_img": res.background_img, "title": res.title}
         return Response({"detail": "success", "result": result})
 
-class ADDQuestionsView(CreateAPIView):
-    queryset = Question.objects.all()
-    serializer_class = QuestionSerializers
+class ADDQuestionsView(CreateAPIView, ListAPIView):
+    queryset = Question_tmp.objects.order_by('id')
+    serializer_class = QuestionTMPSerializers
     permission_classes = (isManagementPermission,)
+
+    def list(self, request, *args, **kwargs):
+        qt_id = request.query_params.get("qt_id")
+        queryset = Question_tmp.objects.filter(qt_id=qt_id)
+        ser = self.get_serializer(queryset, many=True)
+        return Response({"detail": "success", "result": ser.data})
 
     def create(self, request, *args, **kwargs):
         res = add_question(request)
@@ -93,9 +99,10 @@ class GetOptionsView(APIView):
         result = get_question_option(request)
         return Response({"detail": "success", "result": result})
 
-class ADDOrderAndValueView(CreateAPIView):
+class ADDOrderAndValueView(CreateAPIView, ListAPIView):
     queryset = Option.objects.all()
     permission_classes = (isManagementPermission,)
+
     def create(self, request, *args, **kwargs):
         add_order_and_select_value(request)
         return Response({"detail": "success"})

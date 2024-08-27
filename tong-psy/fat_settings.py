@@ -32,9 +32,9 @@ ALLOWED_HOSTS = ["127.0.0.1", "api.uat.tong-psy.com", "m.uat.tong-psy.com", "man
 # Application definition
 # WX_APPID = os.environ.get("APPID")      # 申请的微信appid
 # WX_SECRET = os.environ.get("SECRET")    # 申请的微信secret
+WX_APPID = "wx9026409e86a6e43c"
+WX_SECRET = "9f2a942292ca7279911f9a26a55085cb"
 
-WX_APPID = "wx28d12404872bd1b8"
-WX_SECRET = "7b687309c4cae23b0fdc081dbc4e9bcc"
 DOMAIN = "https://api.uat.tong-psy.com"         # 部署域名
 #DOMAIN = "http://127.0.0.1:8081"                # 部署域名
 
