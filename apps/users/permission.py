@@ -6,6 +6,23 @@ import datetime
 from apps.users.models import User
 from utils.generate_jwt import jwt_decode
 
+class WexinPermission(BasePermission): # 微信登录的权限认证
+    def has_permission(self, request, view):
+        token = request.META.get('HTTP_AUTHORIZATION')
+        try:
+            data = jwt_decode(token)
+            user_id = data.get("data", {}).get('user_id')
+        except Exception as e:
+            return False
+        obj = User.objects.filter(user_id=user_id, token=token).first()
+        if not obj:
+            raise PermissionDenied({"code": 4003, "detail":"账户已在别处登录！"})
+        now = timezone.now()
+        if obj.token_exp + datetime.timedelta(hours=24) > now:
+            if obj.status == "used":
+                return True
+        return False
+
 class FlushPermission(BasePermission):  # 定时任务获取用户信息的认证
     def has_permission(self, request, view):
         token = request.META.get('HTTP_AUTHORIZATION')

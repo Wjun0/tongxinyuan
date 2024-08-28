@@ -12,6 +12,7 @@ from weixin import WXAPPAPI
 from apps.questions.models import QuestionType, Question, Option
 from apps.users.models import User
 from apps.users.pagenation import ResultsSetPagination
+from apps.users.permission import WexinPermission
 from apps.wechats.serizlizers import QuestionTypeListSerializers
 from utils.generate_jwt import generate_jwt
 
@@ -36,7 +37,7 @@ class LoginAPIView(CreateAPIView):
             User.objects.update_or_create(user_id=openid, defaults=d)
             return Response({"detail": "success", "data":{"access_token": access_token, "refresh_token": refresh_token}})
         except Exception as e:
-            logger = logging.getLogger(__name__)
+            logger = logging.getLogger("log")
             logger.error(e)
             return Response({"detail": "无效的code"}, status=400)
 
@@ -45,10 +46,11 @@ class IndexView(ListAPIView):
     serializer_class = QuestionTypeListSerializers
     # filterset_class = QuestionTypeFilter
     pagination_class = ResultsSetPagination
-    # permission_classes = (isManagementPermission,)
+    permission_classes = (WexinPermission,)
 
 class DetailView(ListAPIView):
     queryset = QuestionType.objects.order_by('update_time')
+    permission_classes = (WexinPermission,)
 
     def list(self, request, *args, **kwargs):
         data = request.query_params
@@ -67,6 +69,7 @@ class DetailView(ListAPIView):
         return Response({"detail": "success", "result": result})
 
 class QuestionView(ListAPIView, CreateAPIView):
+    permission_classes = (WexinPermission,)
 
     def create(self, request, *args, **kwargs):
         return

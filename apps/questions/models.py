@@ -216,7 +216,7 @@ class Dimension(models.Model):
         db_table = "tong_dimension"
 
 class Dimension_tmp(models.Model):
-    # 维度名称，一条数据一个结果
+    # 维度名称重复，一条数据一个结果
     id = models.AutoField(primary_key=True)
     u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
     qt_id = models.CharField(max_length=128, default='', verbose_name="问卷类型id")

@@ -47,14 +47,15 @@ def add_question(request):
     del_q_id = []  # 删除使用
     for q in questions:
         q_id = q.get('q_id')
-        q_data = {"number": q.get('number'), "qt_id": qt_id, "q_type": q.get('q_type'),
-                  "q_attr": q.get('q_attr'),
+        if not q_id: # 新增时需要添加q_uid
+            q_id = str(uuid.uuid4())
+        number = q.get('number')
+        q_data = {"number": q.get('number'), "qt_id": qt_id, "u_id": q_id,
+                  "q_attr": q.get('q_attr'), "q_type": q.get('q_type'),
                   "q_title": q.get('q_title'), "q_title_html": q.get('q_title_html'),
                   "q_check_role": q.get('q_check_role'),
                   "min_age": q.get('min_age'), 'max_age': q.get('max_age'), 'sex': q.get('sex')}
-        if not q_id: # 新增时需要添加q_uid
-            q_id = str(uuid.uuid4())
-        cre = Question_tmp.objects.update_or_create(u_id=q_id, qt_id=qt_id, defaults=q_data)
+        cre = Question_tmp.objects.update_or_create(qt_id=qt_id, number=number, defaults=q_data)
         del_q_id.append(q_id)
         a_data_list = []
         del_a_id = [] # 删除使用
@@ -68,7 +69,7 @@ def add_question(request):
             a_data_list.append({"u_id": a_id, "q_id": q_id, "o_number": a.get('o_number'),
                                  "o_content": a.get('o_content'), "o_html_content": a.get('o_html_content')})
 
-        Option_tmp.objects.filter(~Q(u_id__in=del_a_id)).delete()  # 将多余的删除
+        Option_tmp.objects.filter(q_id=q_id).filter(~Q(u_id__in=del_a_id)).delete()  # 将多余的删除
         res.append({"q_id": q_id, "qt_id": qt_id, "number": q.get('number'), "q_type":q.get('q_type'),
                     "q_attr": q.get('q_attr'), "q_title": q.get('q_title'), "q_check_role": q.get('q_check_role'),
                     "options": a_data_list})
@@ -121,6 +122,8 @@ def add_calculate(request):
     Calculate_Exp_tmp.objects.filter(qt_id=qt_id).delete()
     for i in exp:
         i['qt_id'] = qt_id
+        u_id = str(uuid.uuid4())
+        i['u_id'] = u_id
         Calculate_Exp_tmp.objects.create(**i)
     return
 
@@ -145,12 +148,13 @@ def add_result(request):
         del_r_id_list.append(uid)
         res = {"u_id": uid, "qt_id": qt_id, "statement": r.get('statement', ''),
                "background_img": r.get('background_img',''), "result_img": r.get('result_img', '')}
-        Result_Title_tmp.objects.update_or_create(u_id=uid, defaults=res)
-        for dim in r.get('dimession', []):
+        Result_Title_tmp.objects.update_or_create(u_id=uid, qt_id=qt_id, defaults=res)
+
+        for dim in r.get('dimension', []):
             dimension_number = dim.get('dimension_number', '')
             dimension_name = dim.get('dimension_name', '')
             d_result = dim.get('d_result', [])
-            del_dim_id_list = []
+            del_dim_res_num_list = []
             for j in d_result:
                 result_number = j.get('result_number', '')
                 result_name = j.get('result_name', '')
@@ -159,12 +163,13 @@ def add_result(request):
                 dim_u_id = j.get('dim_u_id')
                 if not dim_u_id:
                     dim_u_id = str(uuid.uuid4())
-                del_dim_id_list.append(dim_u_id)
+                del_dim_res_num_list.append(result_number)
                 dim_data = {"u_id": dim_u_id, 'qt_id': qt_id, 'r_id': uid, "dimension_number": dimension_number,
                             "dimension_name": dimension_name, "result_number": result_number,
                             "result_name": result_name, "result_desc": result_desc, "value":value}
-                Dimension_tmp.objects.update_or_create(u_id=dim_u_id, defaults=dim_data)
-            Dimension_tmp.objects.filter(qt_id=qt_id, r_id=uid).filter(~Q(u_id__in=del_dim_id_list)).delete()
+                Dimension_tmp.objects.update_or_create(qt_id=qt_id, dimension_number=dimension_number, result_number=result_number, defaults=dim_data)
+            Dimension_tmp.objects.filter(qt_id=qt_id, dimension_number=dimension_number).\
+                filter(~Q(result_number__in=del_dim_res_num_list)).delete()
     Result_Title_tmp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=del_r_id_list)).delete()
     return
 

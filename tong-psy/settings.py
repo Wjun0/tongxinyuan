@@ -192,7 +192,7 @@ LOGGING = {
     'formatters': {
         # 日志格式
         'standard': {
-            'format': '[%(asctime)s] [%(filename)s:%(lineno)d] [%(module)s:%(funcName)s] '
+            'format': '[%(asctime)s] [%(filename)s:%(lineno)d] [%(module)s:%(funcName)s] [%(pathname)s] '
                       '[%(levelname)s]- %(message)s'},
         'simple': {  # 简单格式
             'format': '%(levelname)s %(message)s'

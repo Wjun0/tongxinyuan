@@ -146,7 +146,7 @@ class GetquestionsView(ListAPIView):
         questions = []
         q_id_list = []
         for q in query:
-            questions.append({"number": q.number, "q_id": '#' + str(q.u_id)})
+            questions.append({"number": q.number, "q_id": q.u_id})
             q_id_list.append(q.u_id)
         ans = Option_tmp.objects.filter(q_id__in=q_id_list)
         an_set = set()
@@ -157,7 +157,7 @@ class GetquestionsView(ListAPIView):
                 try:
                     float(an.value)
                 except Exception as e:   # 不是数字的才加入统计计算的返回
-                    value_list.append({"value": '{' + an.value + '}', "value_cn": '{' + an.value + '}' + '的个数'})
+                    value_list.append({"value": an.value, "value_cn": '{' + an.value + '}' + '的个数'})
         data = {"question_number": questions, "value_list": value_list}
         return Response({"detail": "success", "result": data})
 
