@@ -53,8 +53,8 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
             if qt:
                 if qt.status == "已上线":
                     status_tmp = "已上线（有草稿）"
-                elif qt.status == "已暂停":
-                    status_tmp = "已暂停（有草稿）"
+                elif qt.status == "已下线":
+                    status_tmp = "已下线（有草稿）"
                 else:
                     status_tmp = "草稿"
                 data['status_tmp'] = status_tmp
@@ -63,7 +63,8 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
                 return Response({"detail": "success"})
         # else: # 新增逻辑
         uid = str(uuid.uuid4())
-        data['status'] = "无"
+        del data['qt_id']
+        data['status'] = "草稿"
         data['status_tmp'] = "草稿"
         data['u_id'] = uid
         data['create_user'] = u_name
@@ -168,8 +169,32 @@ class SubmitCheckView(CreateAPIView): # 提交审核
     def create(self, request, *args, **kwargs):
         data = request.data
         qt_id = data.get('qt_id')
-        QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="审核中")
-        return Response({"detail": "success"})
+        obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+        if obj:
+            if obj.status_tmp == "草稿" or obj.status_tmp =="已上线（有草稿）":
+                obj.status_tmp = "待审核"
+                obj.save()
+                return Response({"detail": "success"})
+            Response({"detail": "非草稿无法提交审核！"}, status=400)
+        return Response({"detail": "问卷不存在！"}, status=400)
+
+
+class UndoCheckView(CreateAPIView): # 撤销审核
+    queryset = Question_tmp.objects.all()
+    permission_classes = (isManagementPermission,)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        qt_id = data.get('qt_id')
+        obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+        if obj:
+            if obj.status_tmp == "待审核":
+                obj.status_tmp = "草稿"
+                obj.save()
+                return Response({"detail": "success"})
+            return Response({"detail": "非待审核数据不支持撤销！"}, status=400)
+        return Response({"detail": "问卷不存在！"}, status=400)
+
 
 class SubmitCheckResultView(CreateAPIView):
     queryset = Question_tmp.objects.all()
@@ -179,20 +204,52 @@ class SubmitCheckResultView(CreateAPIView):
         data = request.data
         qt_id = data.get('qt_id')
         status = data.get('status')
-        if status == "已拒绝":
-            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="已拒绝")
-        if status == "已生效":
+        obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+        if not obj:
+            return Response({"detail": "问卷不存在！"}, status=400)
+        if obj.status_tmp != "待审核":
+            return Response({"detail": "非待审核数据不支持操作！"}, status=400)
+        if status == "审批拒绝":
+            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="审批拒绝")
+        if status == "已上线":
+            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="已上线", status="已上线")
+            copy_tmp_table(qt_id)
+            return Response({"detail": "success"})
+        return Response({"detail": "参数错误！"}, status=400)
+
+class OnlineResultView(CreateAPIView):
+    queryset = Question_tmp.objects.all()
+    permission_classes = (idAdminAndCheckerPermission,)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        qt_id = data.get('qt_id')
+        operator = data.get('operator')
+        if operator == "启用": # 已下线->草稿
             obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
-            now = timezone.now()
-            if obj.start_time < now < obj.end_time:
-                obj.status = "已上线"
-                obj.status_tmp = "已上线"
+            if obj:
+                if obj.status != "已下线":
+                    return Response({"detail": "只能操作已下线问卷！"}, status=400)
+                obj.status_tmp = "草稿"
+                obj.status = "草稿"
                 obj.save()
-                # 将tmp表导入到正式表
-                copy_tmp_table(qt_id)
+                # copy_tmp_table(qt_id)
                 return Response({"detail": "success"})
-            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="待生效")
-        return Response({"detail": "success"})
+            return Response({"detail": "问卷不存在！"}, status=400)
+        if operator == "下线":  # 已上线->已下线
+            obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+            if obj:
+                if obj.status != "已上线":
+                    return Response({"detail": "只能操作已上线问卷！"}, status=400)
+                obj.status_tmp="已下线"
+                obj.status="已下线"
+                obj.save()
+                # copy_tmp_table(qt_id)
+                QuestionType.objects.filter(u_id=qt_id).update(status_tmp="已下线", status="已下线")
+                return Response({"detail": "success"})
+            return Response({"detail": "问卷不存在！"}, status=400)
+        return Response({"detail": "参数错误！"}, status=400)
+
 
 class IndexView(ListAPIView):
     queryset = QuestionType_tmp.objects.order_by('-update_time')

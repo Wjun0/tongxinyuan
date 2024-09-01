@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from django.db.models import Q
@@ -73,7 +74,7 @@ def add_question(request):
         res.append({"q_id": q_id, "qt_id": qt_id, "number": q.get('number'), "q_type":q.get('q_type'),
                     "q_attr": q.get('q_attr'), "q_title": q.get('q_title'), "q_check_role": q.get('q_check_role'),
                     "options": a_data_list})
-    Question_tmp.objects.filter(~Q(u_id__in=del_q_id)).delete()
+    Question_tmp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=del_q_id)).delete()
     return res
 
 def get_option_data(request):
@@ -84,7 +85,7 @@ def get_option_data(request):
         ops = Option_tmp.objects.filter(q_id=q.u_id)
         ops_list = []
         for op in ops:
-            ops_list.append({"o_number": op.o_number, "value": op.value})
+            ops_list.append({"o_number": op.o_number, "o_content": op.o_content, "value": op.value})
         result.append({"q_id": q.u_id, "number": q.number, "q_check_role": q.q_check_role, "options": ops_list})
     return result
 
@@ -124,7 +125,9 @@ def add_calculate(request):
         i['qt_id'] = qt_id
         u_id = str(uuid.uuid4())
         i['u_id'] = u_id
-        Calculate_Exp_tmp.objects.create(**i)
+        dic = {'u_id': u_id, 'qt_id': qt_id, "exp_name": i.get('exp_name'), "exp_type": i.get('exp_type'),
+                "formula": json.dumps(i.get('formula', [])), "exp": i.get('exp')}
+        Calculate_Exp_tmp.objects.create(**dic)
     return
 
 def get_calculate(request):
@@ -132,7 +135,7 @@ def get_calculate(request):
     exps = Calculate_Exp_tmp.objects.filter(qt_id=qt_id)
     result = []
     for e in exps:
-        ex = {"exp_id": e.u_id, "exp_name": e.exp_name, "exp_type": e.exp_type, "exp": e.exp}
+        ex = {"exp_id": e.u_id, "exp_name": e.exp_name, "exp_type": e.exp_type, "formula":json.loads(e.formula) ,"exp": e.exp}
         result.append(ex)
     return result
 
@@ -179,7 +182,7 @@ def show_result(request):
     result = {}
     qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
     if qt:
-        step1 = {"start_time": qt.start_time, "end_time": qt.end_time, "background_img": qt.background_img, 'title_img': qt.title_img,
+        step1 = {"qt_id": qt.u_id, "start_time": qt.start_time, "end_time": qt.end_time, "background_img": qt.background_img, 'title_img': qt.title_img,
              "title":qt.title, "test_value": qt.test_value, "q_number": qt.q_number, "test_time": qt.test_time,
              "use_count": qt.use_count, "source": qt.source}
         result["step1"] = step1
@@ -191,12 +194,16 @@ def show_result(request):
             ans = Option_tmp.objects.filter(q_id=q_id)
             options = []
             for j in ans:
-                options.append({"o_number": j.o_number, "o_content": j.o_content})
+                options.append({"u_id": j.u_id, "q_id": q_id, "o_number": j.o_number, "o_content": j.o_content,
+                                "next_q_id": j.next_q_id, "value":j.value})
                 if j.next_q_id:
                     next = Option_tmp.objects.filter(q_id=j.next_q_id).first()
-                    order.append({"q_id": q_id, "number": i.number, "o_number": j.o_number,
+                    order.append({"u_id": j.u_id, "q_id": q_id, "number": i.number, "o_number": j.o_number,
+                                  "o_content": j.o_content, "o_html_content": j.o_html_content,
                                   "next_q_id": next.u_id, "next_number": next.number})
-            questions.append({"number": i.number, "q_title": i.q_title, "answers": options})
+            questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, 'q_attr':i.q_attr, 'q_value_type':i.q_value_type,
+                              "q_title": i.q_title, "q_title_html":i.q_title_html ,"number": i.number, "q_check_role": i.q_check_role,
+                              "min_age":i.min_age,"max_age": i.max_age,"sex":i.sex, "options": options})
         result["step2"] = questions
         exp_list = []
         exps = Calculate_Exp_tmp.objects.filter(qt_id=qt_id)
@@ -216,7 +223,7 @@ def show_result(request):
             for j in dims:
                 dimension_dic[j.dimension_number] = j.dimension_name
             dimensions = []
-            for m, v in dimension_dic:
+            for m, v in dimension_dic.items():
                 ds = Dimension_tmp.objects.filter(qt_id=qt_id, r_id=r_id, dimension_number=m)
                 res_list = []
                 for d in ds:
@@ -265,7 +272,7 @@ def copy_tmp_table(qt_id):
     for m in cas:
         ca_uid_list.append(m.u_id)
         Calculate_Exp.objects.update_or_create(qt_id=qt_id, u_id=m.u_id, defaults={
-            "exp_name": m.exp_name, 'exp_type':m.exp_type, 'exp': m.exp,
+            "exp_name": m.exp_name, 'exp_type':m.exp_type, 'exp': m.exp, 'formula': m.formula,
             'create_time': m.create_time, 'update_time':m.update_time
         })
     Calculate_Exp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=ca_uid_list)).delete()

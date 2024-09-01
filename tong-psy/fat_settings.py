@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django_filters',
     'apps.users',
     'apps.questions',
+    'apps.wechats',
 ]
 
 CORS_ORIGIN_WHITELIST = (

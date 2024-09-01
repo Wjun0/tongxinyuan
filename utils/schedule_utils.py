@@ -1,10 +1,12 @@
+from django.db.models import Q
+
 from apps.questions.models import QuestionType_tmp, QuestionType
 from apps.questions.services import copy_tmp_table
 from apps.users.models import User
 from django.utils import timezone
 
 def update_user_status():
-    users = User.objects.filter(tag=0, status__in=["used", "pending"])
+    users = User.objects.filter(tag=0, status__in=["used", "pending"]).filter(~Q(role=100))
     for i in users:
         now = timezone.now()
         if i.status == "used":  # 生效中的

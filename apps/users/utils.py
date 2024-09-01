@@ -9,6 +9,10 @@ def token_to_name(token):
     obj = User.objects.filter(user_id=user_id).first()
     return obj.name
 
+def get_user_id(token):
+    data = jwt_decode(token)
+    user_id = data.get('data', {}).get('user_id')
+    return user_id
 
 def count_checking_user(): # 统计待审核人员有多少
     num = User.objects.filter(status="checking").count()

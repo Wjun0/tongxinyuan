@@ -144,7 +144,8 @@ class Calculate_Exp(models.Model):
     qt_id = models.CharField(max_length=128, default='', verbose_name="问卷类型id")
     exp_name = models.CharField(max_length=128, default='', verbose_name="因子名称")
     exp_type = models.CharField(max_length=128, default='', verbose_name="因子类型 数字|文本|字母")
-    exp = models.CharField(max_length=128, default='', verbose_name="表达式")
+    exp = models.TextField(default='', verbose_name="表达式")
+    formula = models.TextField(default='', verbose_name="前端校验表达式")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
 
@@ -159,6 +160,7 @@ class Calculate_Exp_tmp(models.Model):
     exp_name = models.CharField(max_length=128, default='', verbose_name="因子名称")
     exp_type = models.CharField(max_length=128, default='', verbose_name="因子类型 数字|文本|字母")
     exp = models.TextField(default='', verbose_name="表达式")
+    formula = models.TextField(default='', verbose_name="前端校验表达式")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
 
@@ -229,11 +231,14 @@ class Dimension_tmp(models.Model):
     result_desc = models.TextField(default='', verbose_name="结果描述")
     result_desc_html = models.TextField(default='', verbose_name="结果描述")
     value = models.JSONField(default=default_data, verbose_name="赋值计算")
-    # order_dic = {"value1": {"role": "校验规则", "exp_id": "计算因子", "format": "大于等于", "value": "比较值",
-    #                 "min_age": 23, "max_age": 50, "sex":"男", "link": "且"},
-    #      "value2": {"role": "校验规则", "exp_id": "计算因子", "format": "大于等于", "value": "比较值",
-    #                 "min_age": 23, "max_age": 50, "sex": "男", "link": "且"}
-    #      }
+    #  judgment_logic: { condition: '无需校验', // 判断条件
+    #                    min_age: "",
+    #                    max_age: "",
+    #                    sex: "",
+    #                    factor_list: [
+    #                         { exp_id: '', format: '', value: '', link: '' }
+    #                     ]
+    #                 }
     class Meta:
         db_table = "tong_dimension_tmp"
 
