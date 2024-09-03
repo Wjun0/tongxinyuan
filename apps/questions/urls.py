@@ -14,11 +14,11 @@ urlpatterns = [
     re_path(r'^show_result/$', views.ShowResultView.as_view()),            # 预览结果 tmp表结果
     # re_path(r'^get_option_value/$', views.GetOptionValueView.as_view()),
 
-    re_path(r'^submit_check/$', views.SubmitCheckView.as_view()),         # 保存并提交审核  草稿->待审核|已上线（有草稿）->待审核
+    re_path(r'^submit_check/$', views.SubmitCheckView.as_view()),         # 保存并提交审核  草稿->待审核|已上线（有草稿）->已上线（有草稿待审核）
     re_path(r'^undo_check/$', views.UndoCheckView.as_view()),             # 撤销审核       待审核->草稿
     re_path(r'^submit_check_result/$', views.SubmitCheckResultView.as_view()),  # 审核    待审核->已拒绝|已上线（审核员）
     re_path(r'^operator_online/$', views.OnlineResultView.as_view()),           # 上下线    已上线->已下线| 已下线->草稿（运营人员）
-
+    re_path(r'^delete/$', views.DeleteView.as_view()),      # 删除草稿
 
 
 

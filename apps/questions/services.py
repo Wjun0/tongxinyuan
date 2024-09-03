@@ -73,7 +73,7 @@ def add_question(request):
         Option_tmp.objects.filter(q_id=q_id).filter(~Q(u_id__in=del_a_id)).delete()  # 将多余的删除
         res.append({"q_id": q_id, "qt_id": qt_id, "number": q.get('number'), "q_type":q.get('q_type'),
                     "q_attr": q.get('q_attr'), "q_title": q.get('q_title'), "q_check_role": q.get('q_check_role'),
-                    "options": a_data_list})
+                    "q_options": a_data_list})
     Question_tmp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=del_q_id)).delete()
     return res
 
@@ -133,11 +133,21 @@ def add_calculate(request):
 def get_calculate(request):
     qt_id = request.query_params.get("qt_id")
     exps = Calculate_Exp_tmp.objects.filter(qt_id=qt_id)
-    result = []
+    exp = []
     for e in exps:
         ex = {"exp_id": e.u_id, "exp_name": e.exp_name, "exp_type": e.exp_type, "formula":json.loads(e.formula) ,"exp": e.exp}
-        result.append(ex)
-    return result
+        exp.append(ex)
+    ques = Question_tmp.objects.filter(qt_id=qt_id)
+    order = []
+    for i in ques:
+        q_id = i.u_id
+        ans = Option_tmp.objects.filter(q_id=q_id)
+        for j in ans:
+            if j.next_q_id:
+                next = Option_tmp.objects.filter(q_id=j.next_q_id).first()
+                order.append({"u_id": j.u_id, "q_id": q_id, "number": i.number, "o_number": j.o_number,
+                              "o_content": j.o_content, "o_html_content": j.o_html_content, "next_q_id": next.q_id})
+    return {"order": order, "exp": exp}
 
 def add_result(request):
     data = request.data
@@ -195,21 +205,21 @@ def show_result(request):
             options = []
             for j in ans:
                 options.append({"u_id": j.u_id, "q_id": q_id, "o_number": j.o_number, "o_content": j.o_content,
-                                "next_q_id": j.next_q_id, "value":j.value})
+                                "o_html_content": j.o_html_content, "next_q_id": j.next_q_id, "value":j.value})
                 if j.next_q_id:
                     next = Option_tmp.objects.filter(q_id=j.next_q_id).first()
                     order.append({"u_id": j.u_id, "q_id": q_id, "number": i.number, "o_number": j.o_number,
                                   "o_content": j.o_content, "o_html_content": j.o_html_content,
-                                  "next_q_id": next.u_id, "next_number": next.number})
+                                  "next_q_id": next.q_id})
             questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, 'q_attr':i.q_attr, 'q_value_type':i.q_value_type,
                               "q_title": i.q_title, "q_title_html":i.q_title_html ,"number": i.number, "q_check_role": i.q_check_role,
-                              "min_age":i.min_age,"max_age": i.max_age,"sex":i.sex, "options": options})
+                              "min_age":i.min_age,"max_age": i.max_age,"sex":i.sex, "q_options": options})
         result["step2"] = questions
         exp_list = []
         exps = Calculate_Exp_tmp.objects.filter(qt_id=qt_id)
         for m in exps:
-            exp_list.append({"exp_name": m.exp_name, "exp": m.exp})
-        result['step3'] = {"orders": order, "exps": exp_list}
+            exp_list.append({"exp_name": m.exp_name, "exp": m.exp, "exp_type": m.exp_type, "formula":m.formula})
+        result['step3'] = {"order": order, "exp": exp_list}
 
         step4 = []
         res = Result_Title_tmp.objects.filter(qt_id=qt_id)
@@ -300,6 +310,68 @@ def copy_tmp_table(qt_id):
 
     return
 
+
+def copy_use_table(qt_id):
+    q = QuestionType.objects.filter(u_id=qt_id).first()
+    QuestionType_tmp.objects.update_or_create(u_id=qt_id, defaults={"background_img": q.background_img, 'title_img':q.title_img,
+                        'title':q.title, 'test_value':q.test_value, 'test_value_html':q.test_value_html,
+                        'q_number':q.q_number, 'test_time':q.test_time, 'use_count':q.use_count, 'source':q.source,
+                        'status': q.status, 'status_tmp': q.status_tmp, 'show_number':q.show_number, 'finish_number': q.finish_number,
+                        'update_user': q.update_user, 'create_user':q.create_user, 'check_user':q.check_user, 'start_time':q.start_time,
+                        'end_time':q.end_time, 'create_time': q.create_time, 'update_time': q.update_time})
+    qq = Question.objects.filter(qt_id=qt_id)
+    q_uid_list = []
+    for i in qq:
+        q_uid_list.append(i.u_id)  # 记录更新的id,不在里面的需要删除
+        Question_tmp.objects.update_or_create(qt_id=qt_id, u_id=i.u_id, defaults={'q_type':i.q_type,
+                        'q_attr': i.q_attr, 'q_value_type':i.q_value_type, 'q_title': i.q_title,
+                        'q_title_html':i.q_title_html, 'number':i.number, 'q_check_role':i.q_check_role,
+                        "min_age": i.min_age,'max_age': i.max_age, 'sex': i.sex,
+                        'create_time': i.create_time, 'update_time':i.update_time})
+    Question_tmp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=q_uid_list)).delete()
+
+    ops = Option.objects.filter(q_id__in=q_uid_list)
+    o_uid_list = []
+    for j in ops:
+        o_uid_list.append(j.u_id)
+        Option_tmp.objects.update_or_create(q_id=j.q_id, u_id=j.u_id, defaults={
+            'o_number':j.o_number, 'o_content':j.o_content, 'o_html_content':j.o_html_content,
+            'next_q_id': j.next_q_id, 'value':j.value, 'create_time':j.create_time, 'update_time': j.update_time
+        })
+    Option_tmp.objects.filter(q_id__in=q_uid_list).filter(~Q(u_id__in=o_uid_list)).delete()
+
+    cas = Calculate_Exp.objects.filter(qt_id=qt_id)
+    ca_uid_list = []
+    for m in cas:
+        ca_uid_list.append(m.u_id)
+        Calculate_Exp_tmp.objects.update_or_create(qt_id=qt_id, u_id=m.u_id, defaults={
+            "exp_name": m.exp_name, 'exp_type':m.exp_type, 'exp': m.exp, 'formula': m.formula,
+            'create_time': m.create_time, 'update_time':m.update_time
+        })
+    Calculate_Exp_tmp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=ca_uid_list)).delete()
+
+    res = Result_Title.objects.filter(qt_id=qt_id)
+    res_uid_list = []
+    for r in res:
+        res_uid_list.append(r.u_id)
+        Result_Title_tmp.objects.update_or_create(qt_id=qt_id, u_id=r.u_id, defaults={
+            'background_img': r.background_img, 'statement': r.statement,
+            'result_img': r.result_img, 'create_time': r.create_time, 'update_time':r.update_time
+        })
+    Result_Title_tmp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=res_uid_list))
+
+    dim = Dimension.objects.filter(qt_id=qt_id, r_id__in=res_uid_list)
+    dim_uid_list = []
+    for d in dim:
+        dim_uid_list.append(d.u_id)
+        Dimension_tmp.objects.update_or_create(qt_id=qt_id, u_id=d.u_id, defaults={
+            'r_id': d.r_id, 'dimension_number': d.dimension_number, 'dimension_name':d.dimension_name,
+            'result_number': d.result_number, 'result_name': d.result_name, 'result_name_html':d.result_name_html,
+            'result_desc': d.result_desc, 'result_desc_html': d.result_desc_html, 'value': d.value
+        })
+    Dimension_tmp.objects.filter(qt_id=qt_id, r_id__in=res_uid_list).filter(~Q(u_id__in=dim_uid_list)).delete()
+
+    return
 
 
 

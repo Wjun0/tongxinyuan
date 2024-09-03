@@ -71,33 +71,8 @@ class DetailView(ListAPIView):
                   'q_number': qt.q_number, "test_time": qt.test_time, "use_count": qt.use_count, 'source':qt.source}
         return Response({"detail": "success", "data": result})
 
-class QuestionView(ListAPIView, CreateAPIView):
+class GETQuestionView(CreateAPIView):
     permission_classes = (WexinPermission,)
-
-    def create(self, request, *args, **kwargs):
-        data = request.data
-        qt_id = data.get('u_id')
-        q_id = data.get('q_id')
-        o_number = data.get('o_number')
-        ans_id = data.get('ans_id','')
-        if not(qt_id and q_id and o_number):
-            return Response({"detail": "参数错误！"}, status=400)
-        token = request.META.get('HTTP_AUTHORIZATION')
-        user_id = get_user_id(token)
-        if not ans_id:
-            ans_id = str(uuid.uuid4())
-            an = {"answer": [{"q_id": q_id, "o_number": o_number}]}
-            default = {"u_id": ans_id, 'user_id': user_id, 'qt_id':qt_id, "answer": an, "result": {}}
-            UserAnswer.objects.update_or_create(u_id=ans_id, user_id=user_id, qt_id=qt_id, defaults=default)
-            return Response({"detail": "success", "data": {"ans_id": ans_id}})
-        obj = UserAnswer.objects.filter(u_id=ans_id, user_id=user_id, qt_id=qt_id).first()
-        if not obj:
-            return Response({"detail": "参数错误！"}, status=400)
-        answer = obj.answer.get("answer").append({"q_id": q_id, "o_number": o_number})
-        # obj.answer = {"answer": answer}
-        obj.save()
-        return Response({"detail": "success", "data": {"ans_id": ans_id}})
-
 
     def get_result(self, qt_id, number):
         obj = Question.objects.filter(qt_id=qt_id, number=number).first()
@@ -111,8 +86,8 @@ class QuestionView(ListAPIView, CreateAPIView):
                   'q_title': obj.q_title, 'q_title_html': obj.q_title_html, "options": options, "q_number": obj.q_number}
         return result
 
-    def list(self, request, *args, **kwargs):
-        data = request.query_params
+    def create(self, request, *args, **kwargs):
+        data = request.data
         qt_id = data.get('u_id')
         last_number = data.get('last_number')
         last_q_id = data.get('last_q_id')
@@ -140,3 +115,30 @@ class QuestionView(ListAPIView, CreateAPIView):
             result = {"q_id": obj.q_id, 'q_type': obj.q_type, 'q_attr': obj.q_attr, "number": obj.number,
                       'q_title': obj.q_title, 'q_title_html': obj.q_title_html, "options": options, "q_number": obj.q_number}
             return Response({"detail": "success", "data": result})
+
+class QuestionView(CreateAPIView):
+    permission_classes = (WexinPermission,)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        qt_id = data.get('u_id')
+        q_id = data.get('q_id')
+        o_number = data.get('o_number')
+        ans_id = data.get('ans_id','')
+        if not(qt_id and q_id and o_number):
+            return Response({"detail": "参数错误！"}, status=400)
+        token = request.META.get('HTTP_AUTHORIZATION')
+        user_id = get_user_id(token)
+        if not ans_id:
+            ans_id = str(uuid.uuid4())
+            an = {"answer": [{"q_id": q_id, "o_number": o_number}]}
+            default = {"u_id": ans_id, 'user_id': user_id, 'qt_id':qt_id, "answer": an, "result": {}}
+            UserAnswer.objects.update_or_create(u_id=ans_id, user_id=user_id, qt_id=qt_id, defaults=default)
+            return Response({"detail": "success", "data": {"ans_id": ans_id}})
+        obj = UserAnswer.objects.filter(u_id=ans_id, user_id=user_id, qt_id=qt_id).first()
+        if not obj:
+            return Response({"detail": "参数错误！"}, status=400)
+        answer = obj.answer.get("answer").append({"q_id": q_id, "o_number": o_number})
+        # obj.answer = {"answer": answer}
+        obj.save()
+        return Response({"detail": "success", "data": {"ans_id": ans_id}})
