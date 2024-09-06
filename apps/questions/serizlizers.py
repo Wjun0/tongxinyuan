@@ -15,14 +15,14 @@ class QuestionTypeTMPSerializers(serializers.ModelSerializer):
                   'test_value_html' ,'q_number', 'test_time', 'use_count', 'source', 'status']
 
 class QuestionTMPSerializers(serializers.ModelSerializer):
-    options = serializers.SerializerMethodField(method_name="get_options")
+    q_options = serializers.SerializerMethodField(method_name="get_q_options")
     # 添加问题的序列化
     class Meta:
         model = Question_tmp
         fields = ['u_id', 'qt_id', 'q_type', 'q_attr', 'q_value_type', 'q_title', 'q_title_html',
-                  'number', 'q_check_role', 'min_age', 'max_age', 'sex', 'options']
+                  'number', 'q_check_role', 'min_age', 'max_age', 'sex', 'q_options']
 
-    def get_options(self, instance):
+    def get_q_options(self, instance):
         ops = []
         objs = Option_tmp.objects.filter(q_id=instance.u_id)
         for i in objs:

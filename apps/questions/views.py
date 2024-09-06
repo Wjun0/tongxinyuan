@@ -15,7 +15,7 @@ from apps.questions.serizlizers import QuestionTypeTMPListSerializers, \
     QuestionTypeTMPSerializers, QuestionTMPSerializers
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
     add_calculate, add_result, show_result, get_option_data, get_calculate, copy_tmp_table, get_question_option, \
-    copy_use_table
+    copy_use_table, get_add_result
 from apps.questions.upload_image_service import upload
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import isManagementPermission, idAdminAndCheckerPermission
@@ -124,13 +124,17 @@ class ADDCalculateView(CreateAPIView, ListAPIView):
         result = get_calculate(request)
         return Response({"detail": "success", "result":result})
 
-class ADDResultView(CreateAPIView):
+class ADDResultView(CreateAPIView, ListAPIView):
     queryset = Calculate_Exp.objects.all()
     permission_classes = (isManagementPermission,)
 
     def create(self, request, *args, **kwargs):
         add_result(request)
         return Response({"detail": "success"})
+
+    def list(self, request, *args, **kwargs):
+        result = get_add_result(request)
+        return Response({"detail": "success", "result":result})
 
 class ShowResultView(APIView):
     queryset = Question_tmp.objects.all()
@@ -183,7 +187,7 @@ class SubmitCheckView(CreateAPIView): # 提交审核
                 obj.status_tmp = "已上线（有草稿待审核）"
                 obj.save()
                 return Response({"detail": "success"})
-            Response({"detail": "非草稿无法提交审核！"}, status=400)
+            return Response({"detail": "非草稿无法提交审核！"}, status=400)
         return Response({"detail": "问卷不存在！"}, status=400)
 
 
@@ -278,7 +282,7 @@ class DeleteView(CreateAPIView):
         if obj.status_tmp not in ["草稿", "已上线（有草稿）"]:
             return Response({"detail": "只能删除草稿问卷！"}, status=400)
         if obj.status_tmp == "草稿":
-            obj.delete()  # 草稿直接删除
+            obj.delete()  # 草稿直接删除(还要删除关联数据)
         else:
             # 将已上线的表数据复制回来
             copy_use_table(qt_id)

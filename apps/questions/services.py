@@ -60,7 +60,7 @@ def add_question(request):
         del_q_id.append(q_id)
         a_data_list = []
         del_a_id = [] # 删除使用
-        for a in q.get('q_options', {}):
+        for a in q.get('q_options', []):
             a_id = q.get('o_id')
             if not a_id:
                 a_id = str(uuid.uuid4())
@@ -86,7 +86,7 @@ def get_option_data(request):
         ops_list = []
         for op in ops:
             ops_list.append({"o_number": op.o_number, "o_content": op.o_content, "value": op.value})
-        result.append({"q_id": q.u_id, "number": q.number, "q_check_role": q.q_check_role, "options": ops_list})
+        result.append({"q_id": q.u_id, "number": q.number, "q_check_role": q.q_check_role, "q_options": ops_list})
     return result
 
 def get_question_option(request):
@@ -144,9 +144,9 @@ def get_calculate(request):
         ans = Option_tmp.objects.filter(q_id=q_id)
         for j in ans:
             if j.next_q_id:
-                next = Option_tmp.objects.filter(q_id=j.next_q_id).first()
+                # next = Option_tmp.objects.filter(q_id=j.next_q_id).first()
                 order.append({"u_id": j.u_id, "q_id": q_id, "number": i.number, "o_number": j.o_number,
-                              "o_content": j.o_content, "o_html_content": j.o_html_content, "next_q_id": next.q_id})
+                              "o_content": j.o_content, "o_html_content": j.o_html_content, "next_q_id": j.next_q_id})
     return {"order": order, "exp": exp}
 
 def add_result(request):
@@ -186,6 +186,37 @@ def add_result(request):
     Result_Title_tmp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=del_r_id_list)).delete()
     return
 
+def get_add_result(request):
+    qt_id = request.query_params.get("qt_id")
+    result = []
+    qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+    if qt:
+        res = Result_Title_tmp.objects.filter(qt_id=qt_id)
+        for i in res:
+            r_id = i.u_id
+            background_img = i.background_img
+            statement = i.statement
+            result_img = i.result_img
+            dims = Dimension_tmp.objects.filter(qt_id=qt_id, r_id=r_id)
+            dimension_dic = {}
+            for j in dims:
+                dimension_dic[j.dimension_number] = j.dimension_name
+            dimensions = []
+            for m, v in dimension_dic.items():
+                ds = Dimension_tmp.objects.filter(qt_id=qt_id, r_id=r_id, dimension_number=m)
+                res_list = []
+                for d in ds:
+                    r_d = {"result_number": d.result_number, "result_name": d.result_name,
+                           'result_name_html': d.result_name_html,
+                           "result_desc": d.result_desc, "result_desc_html": d.result_desc_html, "value": d.value}
+                    res_list.append(r_d)
+                s = {"dimension_number": m, "dimension_name": v, "d_result": res_list}
+                dimensions.append(s)
+            dim_tp = {"background_img": background_img, "statement": statement, "dimensions": dimensions,
+                      "result_img": result_img}
+            result.append(dim_tp)
+    return result
+
 
 def show_result(request):
     qt_id = request.query_params.get("qt_id")
@@ -207,10 +238,10 @@ def show_result(request):
                 options.append({"u_id": j.u_id, "q_id": q_id, "o_number": j.o_number, "o_content": j.o_content,
                                 "o_html_content": j.o_html_content, "next_q_id": j.next_q_id, "value":j.value})
                 if j.next_q_id:
-                    next = Option_tmp.objects.filter(q_id=j.next_q_id).first()
+                    # next = Option_tmp.objects.filter(q_id=j.next_q_id).first()
                     order.append({"u_id": j.u_id, "q_id": q_id, "number": i.number, "o_number": j.o_number,
                                   "o_content": j.o_content, "o_html_content": j.o_html_content,
-                                  "next_q_id": next.q_id})
+                                  "next_q_id": j.next_q_id})
             questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, 'q_attr':i.q_attr, 'q_value_type':i.q_value_type,
                               "q_title": i.q_title, "q_title_html":i.q_title_html ,"number": i.number, "q_check_role": i.q_check_role,
                               "min_age":i.min_age,"max_age": i.max_age,"sex":i.sex, "q_options": options})
@@ -237,12 +268,12 @@ def show_result(request):
                 ds = Dimension_tmp.objects.filter(qt_id=qt_id, r_id=r_id, dimension_number=m)
                 res_list = []
                 for d in ds:
-                    r_d = {"result_number": d.result_number, "result_name": d.result_name,
-                           "result_desc": d.result_desc, "value": d.value}
+                    r_d = {"result_number": d.result_number, "result_name": d.result_name, 'result_name_html':d.result_name_html,
+                           "result_desc": d.result_desc,"result_desc_html": d.result_desc_html, "value": d.value}
                     res_list.append(r_d)
                 s = {"dimension_number": m, "dimension_name":v, "d_result": res_list}
                 dimensions.append(s)
-            dim_tp = {"background_img":background_img, "statement":statement, "result_img":result_img, "dimensions": dimensions}
+            dim_tp = {"background_img":background_img, "statement":statement, "dimensions": dimensions, "result_img": result_img}
             step4.append(dim_tp)
         result["step4"] = step4
     return result

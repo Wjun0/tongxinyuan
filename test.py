@@ -12,10 +12,12 @@ print(s)
 value = eval(s)
 print(value)
 
-
+import re
 s2 = "{专制} + {独裁} + {D}"
-
-exp = 3>1 and 4>2 or 4>2
+par = re.compile(r'{.*?}', )
+res = par.findall(s2)
+print(res)
+exp = "3>1 and 4>2 or 4>2"
 print(exp)
 print(1)
 
@@ -27,3 +29,5 @@ print("\\" == l)
 print('\\' == "\\\\")
 ss = uuid.uuid4()
 print(ss)
+
+print(1 != 2)
