@@ -8,7 +8,6 @@ from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.questions.filters import QuestionTypetmpFilter
 from apps.questions.models import QuestionType, Question, Calculate_Exp, Option, QuestionType_tmp, Question_tmp, \
     Option_tmp
 from apps.questions.serizlizers import QuestionTypeTMPListSerializers, \
@@ -16,6 +15,7 @@ from apps.questions.serizlizers import QuestionTypeTMPListSerializers, \
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
     add_calculate, add_result, show_result, get_option_data, get_calculate, copy_tmp_table, get_question_option, \
     copy_use_table, get_add_result
+from apps.questions.services_show import get_show_question
 from apps.questions.upload_image_service import upload
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import isManagementPermission, idAdminAndCheckerPermission
@@ -288,11 +288,87 @@ class DeleteView(CreateAPIView):
             copy_use_table(qt_id)
         return Response({"detail": "success"})
 
-class IndexView(ListAPIView):
-    queryset = QuestionType_tmp.objects.order_by('-update_time')
+class IndexView(CreateAPIView):
+    queryset = QuestionType_tmp.objects.all()
     serializer_class = QuestionTypeTMPListSerializers
-    filterset_class = QuestionTypetmpFilter
     pagination_class = ResultsSetPagination
     permission_classes = (isManagementPermission,)
 
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        title = data.get('title')
+        status_tmp = data.get('status_tmp')
+        create_user = data.get('create_user')
+        check_user = data.get('check_user')
+        order = data.get('order')
+        download = data.get('download')
+        queryset = self.get_queryset()
+        if title:
+            queryset = queryset.filter(title__icontains=title)
+        if create_user:
+            queryset = queryset.filter(create_user__icontains=create_user)
+        if check_user:
+            queryset = queryset.filter(check_user__icontains=check_user)
+        if status_tmp:
+            queryset = queryset.filter(status_tmp__in=status_tmp)
+        for o in order:
+            order_list = ['show_number', '-show_number', "finish_number", "-finish_number",
+                          "create_time", '-create_time', 'update_time', '-update_time']
+            if o in order_list:
+                queryset = queryset.order_by(o)
+        if not order:
+            queryset = queryset.order_by('-update_time')
+        if download: # 下载
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
+class CheckIndexView(CreateAPIView):
+    queryset = QuestionType_tmp.objects.filter(status_tmp__in=["审核拒绝", "已上线", "待审核", "已上线（有草稿待审核）"])
+    serializer_class = QuestionTypeTMPListSerializers
+    pagination_class = ResultsSetPagination
+    permission_classes = (isManagementPermission,)
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        title = data.get('title')
+        update_user = data.get('update_user')
+        status_tmp = data.get('status_tmp')
+        order = data.get('order')
+        download = data.get('download')
+        queryset = self.get_queryset()
+        if title:
+            queryset = queryset.filter(title__icontains=title)
+        if update_user:
+            queryset = queryset.filter(update_user__icontains=update_user)
+        if status_tmp:
+            queryset = queryset.filter(status_tmp__in=status_tmp)
+        for o in order:
+            order_list = ['check_time', '-check_time',"create_time", '-create_time', 'update_time', '-update_time']
+            if o in order_list:
+                queryset = queryset.order_by(o)
+        if not order:
+            queryset = queryset.order_by('-update_time')
+        if download: # 下载
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class ShowquestionAPIView(ListAPIView):
+    queryset = QuestionType_tmp.objects.order_by('id')
+    permission_classes = (isManagementPermission,)
+
+    def list(self, request, *args, **kwargs):
+        qt_id = request.query_params.get("qt_id")
+        result = get_show_question(qt_id)
+        return Response({"detail": "success", "data": result})

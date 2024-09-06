@@ -21,10 +21,12 @@ urlpatterns = [
     re_path(r'^delete/$', views.DeleteView.as_view()),      # 删除草稿
 
 
+    # 全部问卷列表
+    re_path(r'^index/$', views.IndexView.as_view()),            # 问卷列表页
+    re_path(r'^show/$', views.ShowquestionAPIView.as_view()),   # 查看问卷
 
 
+    # 审批接口
+    re_path(r'^check_index/$', views.CheckIndexView.as_view()),  # 审批列表页
 
-
-    # 查询接口
-    re_path(r'^index/$', views.IndexView.as_view()),
 ]
