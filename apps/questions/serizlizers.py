@@ -1,11 +1,18 @@
 from rest_framework import serializers
 from apps.questions.models import QuestionType, QuestionType_tmp, Option_tmp, Question_tmp
+from apps.users.models import User
 
 
 class QuestionTypeTMPListSerializers(serializers.ModelSerializer):
+    create_user_id = serializers.SerializerMethodField(method_name="get_create_user_id")
     class Meta:
         model = QuestionType_tmp
-        fields = "__all__"
+        fields = ['u_id', 'title', 'show_number', 'finish_number', 'create_time', 'update_time',
+                  'create_user', 'create_user_id', 'check_user', 'status_tmp',]
+
+    def get_create_user_id(self, instance):
+        user = User.objects.filter(name=instance.create_user).first()
+        return user.user_id if user else ""
 
 class QuestionTypeTMPSerializers(serializers.ModelSerializer):
 

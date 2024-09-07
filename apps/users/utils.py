@@ -1,5 +1,6 @@
 import re
 
+from apps.questions.models import QuestionType_tmp
 from apps.users.models import User
 from utils.generate_jwt import jwt_decode
 
@@ -18,6 +19,9 @@ def count_checking_user(): # 统计待审核人员有多少
     num = User.objects.filter(status="checking").count()
     return num
 
+def count_checking_question(): # 统计有多少待审核的问卷
+    num = QuestionType_tmp.objects.filter(status_tmp="待审核").count()
+    return num
 
 def check_name_pass(name):
     if re.compile(r'^[a-zA-Z0-9\u4e00-\u9fff]+$').search(name):

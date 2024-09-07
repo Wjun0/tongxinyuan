@@ -74,7 +74,7 @@ from utils.schedule_utils import update_user_status, update_question_status
 
 sche = BackgroundScheduler()
 sche.add_job(update_user_status, trigger=CronTrigger(second="*/30"), max_instances=2)  # 30秒执行一次
-sche.add_job(update_question_status, trigger=CronTrigger(second="*/30"), max_instances=2)  # 更新问卷状态
+# sche.add_job(update_question_status, trigger=CronTrigger(second="*/30"), max_instances=2)  # 更新问卷状态
 sche.start()
 
 
