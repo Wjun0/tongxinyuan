@@ -19,6 +19,7 @@ urlpatterns = [
     re_path(r'^submit_check_result/$', views.SubmitCheckResultView.as_view()),  # 审核    待审核->已拒绝|已上线（审核员）
     re_path(r'^operator_online/$', views.OnlineResultView.as_view()),           # 上下线    已上线->已下线| 已下线->草稿（运营人员）
     re_path(r'^delete/$', views.DeleteView.as_view()),      # 删除草稿
+    re_path(r'^copy/$', views.CopyAPIView.as_view()),      # 复制问卷
 
 
     # 全部问卷列表

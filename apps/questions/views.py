@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 from django.shortcuts import render
@@ -14,11 +15,12 @@ from apps.questions.serizlizers import QuestionTypeTMPListSerializers, \
     QuestionTypeTMPSerializers, QuestionTMPSerializers
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
     add_calculate, add_result, show_result, get_option_data, get_calculate, copy_tmp_table, get_question_option, \
-    copy_use_table, get_add_result
+    copy_use_table, get_add_result, copy_question
 from apps.questions.services_show import get_show_question
 from apps.questions.upload_image_service import upload
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import isManagementPermission, idAdminAndCheckerPermission
+from apps.users.permission_utils import user_is_operator
 from apps.users.utils import token_to_name
 
 
@@ -73,6 +75,8 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
         data['u_id'] = uid
         data['create_user'] = u_name
         data['update_user'] = u_name
+        data['start_time'] = "2024-01-01 12:12:12"      # 暂时不用的字段
+        data['end_time'] = "2044-12-12 12:12:12"        # 暂时不用的字段
         res = QuestionType_tmp.objects.create(**data)
         result = {"u_id":res.u_id, "background_img": res.background_img, "title": res.title}
         return Response({"detail": "success", "result": result})
@@ -199,7 +203,11 @@ class UndoCheckView(CreateAPIView): # 撤销审核
         data = request.data
         qt_id = data.get('qt_id')
         obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+        user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
         if obj:
+            if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+                if obj.create_user != user:
+                    return Response({"detail": "无权限操作！"}, status=403)
             if obj.status_tmp == "待审核":
                 obj.status_tmp = "草稿"
                 obj.save()
@@ -221,6 +229,8 @@ class SubmitCheckResultView(CreateAPIView):
         qt_id = data.get('qt_id')
         status = data.get('status')
         obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+        check_time = datetime.datetime.now()
+        check_user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
         if not obj:
             return Response({"detail": "问卷不存在！"}, status=400)
         if obj.status_tmp not in ["待审核", "已上线（有草稿待审核）"]:
@@ -229,9 +239,12 @@ class SubmitCheckResultView(CreateAPIView):
             t_status = "审核拒绝"
             if obj.status == "已上线（有草稿待审核）":
                 t_status = "已上线（有草稿审核拒绝）"
-            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp=t_status)
+            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp=t_status,
+                                                               check_time=check_time, check_user=check_user)
+            return Response({"detail": "success"})
         if status == "已上线":
-            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="已上线", status="已上线")
+            QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp="已上线", status="已上线",
+                                                               check_time=check_time, check_user=check_user)
             copy_tmp_table(qt_id)
             return Response({"detail": "success"})
         return Response({"detail": "参数错误！"}, status=400)
@@ -271,7 +284,7 @@ class OnlineResultView(CreateAPIView):
 
 class DeleteView(CreateAPIView):
     queryset = Question_tmp.objects.all()
-    permission_classes = (idAdminAndCheckerPermission,)
+    permission_classes = (isManagementPermission,)
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -279,6 +292,10 @@ class DeleteView(CreateAPIView):
         obj = QuestionType_tmp.objects.filter(u_id=qt_id).first()
         if not obj:
             return Response({"detail": "问卷不存在！"}, status=400)
+        user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+            if obj.create_user != user:
+                return Response({"detail": "无权限操作！"}, status=403)
         if obj.status_tmp not in ["草稿", "已上线（有草稿）"]:
             return Response({"detail": "只能删除草稿问卷！"}, status=400)
         if obj.status_tmp == "草稿":
@@ -286,6 +303,17 @@ class DeleteView(CreateAPIView):
         else:
             # 将已上线的表数据复制回来
             copy_use_table(qt_id)
+        return Response({"detail": "success"})
+
+class CopyAPIView(CreateAPIView):
+    queryset = Question_tmp.objects.all()
+    permission_classes = (isManagementPermission,)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        qt_id = data.get('qt_id')
+        user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        copy_question(qt_id, user)
         return Response({"detail": "success"})
 
 class IndexView(CreateAPIView):

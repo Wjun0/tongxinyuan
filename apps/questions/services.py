@@ -21,8 +21,8 @@ def add_question_type(request):
     source = data.get('source')
     start_time = data.get('start_time')
     end_time = data.get('end_time')
-    if not check_start_end_time(start_time, end_time):
-        raise Exception_("时间格式错误！")
+    # if not check_start_end_time(start_time, end_time):
+    #     raise Exception_("时间格式错误！")
     if background_img:
         if not check_img(background_img, "background_img"):
             raise Exception_("背景图校验错误！")
@@ -285,8 +285,8 @@ def copy_tmp_table(qt_id):
                         'title':q.title, 'test_value':q.test_value, 'test_value_html':q.test_value_html,
                         'q_number':q.q_number, 'test_time':q.test_time, 'use_count':q.use_count, 'source':q.source,
                         'status': q.status, 'status_tmp': q.status_tmp, 'show_number':q.show_number, 'finish_number': q.finish_number,
-                        'update_user': q.update_user, 'create_user':q.create_user, 'check_user':q.check_user, 'start_time':q.start_time,
-                        'end_time':q.end_time, 'create_time': q.create_time, 'update_time': q.update_time})
+                        'update_user': q.update_user, 'create_user':q.create_user, 'check_user':q.check_user, 'check_time':q.check_time,
+                        'start_time':q.start_time, 'end_time':q.end_time, 'create_time': q.create_time, 'update_time': q.update_time})
     qq = Question_tmp.objects.filter(qt_id=qt_id)
     q_uid_list = []
     for i in qq:
@@ -404,5 +404,29 @@ def copy_use_table(qt_id):
 
     return
 
+
+def copy_question(qt_id, user):
+    q = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+    if q:
+        new_qt_id = str(uuid.uuid4())
+        title = "【复制】" + q.title
+        QuestionType_tmp.objects.create(u_id=new_qt_id, background_img=q.background_img, title_img=q.title,title=title,
+            test_value=q.test_value, test_value_html=q.test_value_html, q_number=q.q_number,
+            test_time=q.test_time, use_count=q.use_count, source=q.source, status="草稿", status_tmp="草稿",
+            show_number=0, finish_number=0, update_user=user, create_user=user, check_user='',
+            start_time=q.start_time, end_time=q.end_time)
+        ques = Question_tmp.objects.filter(qt_id=qt_id)
+        for i in ques:
+            new_q_id = str(uuid.uuid4())
+            Question_tmp.objects.create(u_id=new_q_id, qt_id=new_qt_id, q_type=i.q_type, q_attr=i.q_attr,
+                        q_value_type=i.q_value_type, q_title=i.q_title, q_title_html=i.q_title_html,
+                        number=i.number, q_check_role=i.q_check_role, min_age=i.min_age, max_age=i.max_age,
+                        sex=i.sex)
+            ops = Option_tmp.objects.filter(q_id=i.u_id)
+            for op in ops:
+                o_u_id = str(uuid.uuid4())
+                Option_tmp.objects.create(u_id=o_u_id, q_id=new_q_id, o_number=op.o_number, o_content=op.o_content,
+                        o_html_content=op.o_html_content, next_q_id='', value=op.value)
+    return
 
 

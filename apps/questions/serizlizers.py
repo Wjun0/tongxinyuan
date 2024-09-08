@@ -8,7 +8,7 @@ class QuestionTypeTMPListSerializers(serializers.ModelSerializer):
     class Meta:
         model = QuestionType_tmp
         fields = ['u_id', 'title', 'show_number', 'finish_number', 'create_time', 'update_time',
-                  'create_user', 'create_user_id', 'check_user', 'status_tmp',]
+                  'create_user', 'create_user_id', 'check_user', 'update_user', 'status_tmp', 'check_time']
 
     def get_create_user_id(self, instance):
         user = User.objects.filter(name=instance.create_user).first()

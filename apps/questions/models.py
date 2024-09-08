@@ -52,6 +52,7 @@ class QuestionType_tmp(models.Model):
     update_user = models.CharField(max_length=32, default='', verbose_name="最近更新人")
     create_user = models.CharField(max_length=32, default='', verbose_name="创建人")
     check_user = models.CharField(max_length=32, default='', verbose_name="审核人")
+    check_time = models.DateTimeField(null=True, blank=True, verbose_name="审核完成时间")
     start_time = models.DateTimeField(null=True, blank=True, verbose_name="问卷开始使用时间")
     end_time = models.DateTimeField(null=True, blank=True, verbose_name="问卷结束使用时间")
     create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
