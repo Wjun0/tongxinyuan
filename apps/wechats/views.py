@@ -18,7 +18,7 @@ from apps.users.permission import WexinPermission
 from apps.users.utils import get_user_id
 from apps.wechats.models import UserAnswer
 from apps.wechats.serizlizers import QuestionTypeListSerializers
-from apps.wechats.services import generate_result
+from apps.wechats.services import generate_result, count_finish_number, count_show_number
 from utils.generate_jwt import generate_jwt
 
 
@@ -95,6 +95,7 @@ class DetailView(ListAPIView):
         result = {"qt_id": qt.u_id, "background_img": background_img, 'title_img': title_img,
                   "title": qt.title, "test_value": qt.test_value, "test_value_html": qt.test_value_html,
                   'q_number': qt.q_number, "test_time": qt.test_time, "use_count": qt.use_count, 'source':qt.source}
+        count_show_number(request, qt_id)
         return Response({"detail": "success", "data": result})
 
 class GETQuestionView(CreateAPIView):
@@ -201,4 +202,6 @@ class ResultView(CreateAPIView):
             result = {}
         else:
             result = obj.result
+        # 统计完成数据
+        count_finish_number(request, qt_id)
         return Response({"detail": "success", "data": result})

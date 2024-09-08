@@ -20,7 +20,7 @@ def count_checking_user(): # 统计待审核人员有多少
     return num
 
 def count_checking_question(): # 统计有多少待审核的问卷
-    num = QuestionType_tmp.objects.filter(status_tmp="待审核").count()
+    num = QuestionType_tmp.objects.filter(status_tmp__in=["待审核", '已上线（草稿待审核）']).count()
     return num
 
 def check_name_pass(name):

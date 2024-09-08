@@ -53,20 +53,20 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
         u_id = data.get('qt_id', '')
         qt = QuestionType_tmp.objects.filter(u_id=u_id).first()
         if qt:
-            if qt.status not in ["草稿", "审批拒绝", "已上线", "已上线（有草稿）", "已上线（有草稿审核拒绝）", "已下线"]:
+            if qt.status not in ["草稿", "审批拒绝", "已上线", "已上线（有草稿）", "已上线（草稿审核拒绝）", "已下线"]:
                 return Response({"detail": "该状态不支持编辑！"}, status=400)
             if qt.status == "审批拒绝":
                 status_tmp = "草稿"
-            elif qt.status in ["已上线", "已上线（有草稿审核拒绝）", "已上线（有草稿）"]:
+            elif qt.status in ["已上线", "已上线（草稿审核拒绝）", "已上线（有草稿）"]:
                 status_tmp = "已上线（有草稿）"
             elif qt.status == "已下线":
-                status_tmp = "已下线（有草稿）"
+                status_tmp = "草稿"
             else:
                 status_tmp = "草稿"
             data['status_tmp'] = status_tmp
             data['update_user'] = u_name
             QuestionType_tmp.objects.update_or_create(u_id=u_id, defaults=data)
-            return Response({"detail": "success"})
+            return Response({"detail": "success", 'result': {'title': data.get('title')}})
         # else: # 新增逻辑
         uid = str(uuid.uuid4())
         del data['qt_id']
@@ -77,6 +77,8 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
         data['update_user'] = u_name
         data['start_time'] = "2024-01-01 12:12:12"      # 暂时不用的字段
         data['end_time'] = "2044-12-12 12:12:12"        # 暂时不用的字段
+        data['show_number'] = 0
+        data['finish_number'] = 0
         res = QuestionType_tmp.objects.create(**data)
         result = {"u_id":res.u_id, "background_img": res.background_img, "title": res.title}
         return Response({"detail": "success", "result": result})
@@ -188,7 +190,7 @@ class SubmitCheckView(CreateAPIView): # 提交审核
                 obj.save()
                 return Response({"detail": "success"})
             if obj.status_tmp =="已上线（有草稿）":
-                obj.status_tmp = "已上线（有草稿待审核）"
+                obj.status_tmp = "已上线（草稿待审核）"
                 obj.save()
                 return Response({"detail": "success"})
             return Response({"detail": "非草稿无法提交审核！"}, status=400)
@@ -212,7 +214,7 @@ class UndoCheckView(CreateAPIView): # 撤销审核
                 obj.status_tmp = "草稿"
                 obj.save()
                 return Response({"detail": "success"})
-            if obj.status_tmp == "已上线（有草稿待审核）":
+            if obj.status_tmp == "已上线（草稿待审核）":
                 obj.status_tmp = "已上线（有草稿）"
                 obj.save()
                 return Response({"detail": "success"})
@@ -233,12 +235,12 @@ class SubmitCheckResultView(CreateAPIView):
         check_user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
         if not obj:
             return Response({"detail": "问卷不存在！"}, status=400)
-        if obj.status_tmp not in ["待审核", "已上线（有草稿待审核）"]:
+        if obj.status_tmp not in ["待审核", "已上线（草稿待审核）"]:
             return Response({"detail": "非待审核数据不支持操作！"}, status=400)
         if status == "审核拒绝":
             t_status = "审核拒绝"
-            if obj.status == "已上线（有草稿待审核）":
-                t_status = "已上线（有草稿审核拒绝）"
+            if obj.status == "已上线（草稿待审核）":
+                t_status = "已上线（草稿审核拒绝）"
             QuestionType_tmp.objects.filter(u_id=qt_id).update(status_tmp=t_status,
                                                                check_time=check_time, check_user=check_user)
             return Response({"detail": "success"})
@@ -313,8 +315,8 @@ class CopyAPIView(CreateAPIView):
         data = request.data
         qt_id = data.get('qt_id')
         user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
-        copy_question(qt_id, user)
-        return Response({"detail": "success"})
+        new_qt_id, title = copy_question(qt_id, user)
+        return Response({"detail": "success", "data": {'title': title,"new_qt_id": new_qt_id}})
 
 class IndexView(CreateAPIView):
     queryset = QuestionType_tmp.objects.all()
@@ -357,7 +359,7 @@ class IndexView(CreateAPIView):
         return Response(serializer.data)
 
 class CheckIndexView(CreateAPIView):
-    queryset = QuestionType_tmp.objects.filter(status_tmp__in=["审核拒绝", "已上线", "待审核", "已上线（有草稿待审核）"])
+    queryset = QuestionType_tmp.objects.filter(status_tmp__in=["审核拒绝", "已上线", "待审核", "已上线（草稿待审核）"])
     serializer_class = QuestionTypeTMPListSerializers
     pagination_class = ResultsSetPagination
     permission_classes = (isManagementPermission,)

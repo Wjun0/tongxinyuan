@@ -2,9 +2,12 @@ import re
 
 from django.conf import settings
 
-from apps.questions.models import Dimension, Question, Option, Calculate_Exp, Result_Title
+from apps.questions.models import Dimension, Question, Option, Calculate_Exp, Result_Title, QuestionType, \
+    QuestionType_tmp
 from apps.users.exceptions import Exception_
-from apps.wechats.models import UserAnswer
+from apps.users.utils import get_user_id
+from apps.wechats.models import UserAnswer, UserShow_number
+
 format_dic = {"大于": ">", "大于等于": ">=",
               "小于": "<", "小于等于": "<=",
               "等于": "=", "不等于": "!="}
@@ -138,3 +141,68 @@ def generate_result(qt_id, ans_id):
     ans_obj.save()
     return
 
+
+def count_finish_number(request, qt_id):
+    token = request.META.get('HTTP_AUTHORIZATION')
+    user_id = get_user_id(token)
+    obj = UserAnswer.objects.filter(qt_id=qt_id, user_id=user_id).first()
+    if not obj: # 没有回答过才算
+        if obj.result: # 并且生成结果
+            q = QuestionType.objects.filter(u_id=qt_id).first()
+            if q:
+                old_finish_num = q.finish_number
+                try:
+                    old_finish_num = int(old_finish_num)
+                except Exception as e:
+                    old_finish_num = 0
+                q.finish_number = old_finish_num + 1
+                q.save()
+            q_tmp = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+            if q_tmp:
+                old_finish_num = q_tmp.finish_number
+                try:
+                    old_finish_num = int(old_finish_num)
+                except Exception as e:
+                    old_finish_num = 0
+                q_tmp.finish_number = old_finish_num + 1
+                q_tmp.save()
+            return
+        return
+
+def count_show_number(request, qt_id):
+    token = request.META.get('HTTP_AUTHORIZATION')
+    user_id = get_user_id(token)
+    sh = UserShow_number.objects.filter(qt_id=qt_id,user_id=user_id).first()
+    if not sh: # 没有浏览过才增加
+        q = QuestionType.objects.filter(u_id=qt_id).first()
+        if q:
+            old_show_number = q.show_number
+            try:
+                old_show_number = int(old_show_number)
+            except Exception as e:
+                old_show_number = 0
+            q.old_show_number = old_show_number + 1
+            q.save()
+        q_tmp = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+        if q_tmp:
+            old_show_number = q_tmp.show_number
+            try:
+                old_show_number = int(old_show_number)
+            except Exception as e:
+                old_show_number = 0
+            q_tmp.old_show_number = old_show_number + 1
+            q_tmp.save()
+        #添加完成将记录入库
+        UserShow_number.objects.create(qt_id=qt_id, user_id=user_id)
+        return
+    return
+
+def check_user_answer(request, qt_id):   # 判断用户是否回答过
+    token = request.META.get('HTTP_AUTHORIZATION')
+    user_id = get_user_id(token)
+    obj = UserAnswer.objects.filter(qt_id=qt_id, user_id=user_id).first()
+    if obj:
+        if obj.result:
+            return True
+        return False
+    return False

@@ -410,7 +410,7 @@ def copy_question(qt_id, user):
     if q:
         new_qt_id = str(uuid.uuid4())
         title = "【复制】" + q.title
-        QuestionType_tmp.objects.create(u_id=new_qt_id, background_img=q.background_img, title_img=q.title,title=title,
+        QuestionType_tmp.objects.create(u_id=new_qt_id, background_img=q.background_img, title_img=q.title_img, title=title,
             test_value=q.test_value, test_value_html=q.test_value_html, q_number=q.q_number,
             test_time=q.test_time, use_count=q.use_count, source=q.source, status="草稿", status_tmp="草稿",
             show_number=0, finish_number=0, update_user=user, create_user=user, check_user='',
@@ -427,6 +427,7 @@ def copy_question(qt_id, user):
                 o_u_id = str(uuid.uuid4())
                 Option_tmp.objects.create(u_id=o_u_id, q_id=new_q_id, o_number=op.o_number, o_content=op.o_content,
                         o_html_content=op.o_html_content, next_q_id='', value=op.value)
-    return
+        return new_qt_id, title
+    return None
 
 
