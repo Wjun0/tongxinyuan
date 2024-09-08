@@ -18,7 +18,7 @@ from apps.users.permission import WexinPermission
 from apps.users.utils import get_user_id
 from apps.wechats.models import UserAnswer
 from apps.wechats.serizlizers import QuestionTypeListSerializers
-from apps.wechats.services import generate_result, count_finish_number, count_show_number
+from apps.wechats.services import generate_result, count_finish_number, count_show_number, check_user_answer
 from utils.generate_jwt import generate_jwt
 
 
@@ -96,7 +96,8 @@ class DetailView(ListAPIView):
                   "title": qt.title, "test_value": qt.test_value, "test_value_html": qt.test_value_html,
                   'q_number': qt.q_number, "test_time": qt.test_time, "use_count": qt.use_count, 'source':qt.source}
         count_show_number(request, qt_id)
-        return Response({"detail": "success", "data": result})
+        user_is_answer = check_user_answer(request, qt_id)
+        return Response({"detail": "success", "data": result, "user_is_answer": user_is_answer})
 
 class GETQuestionView(CreateAPIView):
     permission_classes = (WexinPermission,)
