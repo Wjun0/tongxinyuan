@@ -171,7 +171,9 @@ def add_result(request):
             for j in d_result:
                 result_number = j.get('result_number', '')
                 result_name = j.get('result_name', '')
+                result_name_html = j.get('result_name_html', '')
                 result_desc = j.get('result_desc', '')
+                result_desc_html = j.get('result_desc_html', '')
                 value = j.get('value', {})
                 dim_u_id = j.get('dim_u_id')
                 if not dim_u_id:
@@ -179,6 +181,7 @@ def add_result(request):
                 del_dim_res_num_list.append(result_number)
                 dim_data = {"u_id": dim_u_id, 'qt_id': qt_id, 'r_id': uid, "dimension_number": dimension_number,
                             "dimension_name": dimension_name, "result_number": result_number,
+                            'result_name_html': result_name_html, 'result_desc_html':result_desc_html,
                             "result_name": result_name, "result_desc": result_desc, "value":value}
                 Dimension_tmp.objects.update_or_create(qt_id=qt_id, dimension_number=dimension_number, result_number=result_number, defaults=dim_data)
             Dimension_tmp.objects.filter(qt_id=qt_id, dimension_number=dimension_number).\

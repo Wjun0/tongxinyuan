@@ -81,11 +81,11 @@ class DetailView(ListAPIView):
         qt = self.get_queryset().filter(u_id=qt_id).first()
         if not qt:
             return Response({"detail": "问卷不存在！"}, status=400)
-        now = timezone.now()
-        if now < qt.start_time:
-            return Response({"detail": "问卷即将开放，敬请期待~"}, status=403)
-        if now > qt.end_time:
-            return Response({"detail": "问卷已下线，去看看其他有趣内容吧~"}, status=403)
+        # now = timezone.now()
+        # if now < qt.start_time:
+        #     return Response({"detail": "问卷即将开放，敬请期待~"}, status=403)
+        # if now > qt.end_time:
+        #     return Response({"detail": "问卷已下线，去看看其他有趣内容吧~"}, status=403)
         background_img = qt.background_img
         if background_img:
             background_img = settings.DOMAIN + "/media/image/" + background_img
@@ -121,7 +121,11 @@ class GETQuestionView(CreateAPIView):
         last_number = data.get('last_number')
         last_q_id = data.get('last_q_id')
         last_o_number = data.get('last_o_number')
-
+        qt = QuestionType.objects.filter(u_id=qt_id).first()
+        if not qt:
+            title = ''
+        else:
+            title = qt.title
         # 判断题目是否是顺序题
         q = Question.objects.filter(qt_id=qt_id).values('u_id')
         q_u_id_list = []
@@ -137,7 +141,7 @@ class GETQuestionView(CreateAPIView):
         if not last_q_id and not last_o_number:
             # 获取第一题
             result = self.get_result(qt_id, order, end_num, number="1")
-            return Response({"detail": "success", "data": result})
+            return Response({"detail": "success", "data": result, 'title': title})
 
         obj = Option.objects.filter(q_id=last_q_id, o_number=last_o_number).first()
         if not obj:
@@ -146,7 +150,7 @@ class GETQuestionView(CreateAPIView):
             # 没有定义下一题
             number = int(last_number) + 1
             result = self.get_result(qt_id, order, end_num, number=str(number))
-            return Response({"detail": "success", "data": result})
+            return Response({"detail": "success", "data": result, 'title': title})
         else:  # 根据上一题获取下一题
             obj = Question.objects.filter(qt_id=qt_id, u_id=obj.next_q_id).first()
             if not obj:
@@ -158,7 +162,7 @@ class GETQuestionView(CreateAPIView):
             result = {"q_id": obj.u_id, 'q_type': obj.q_type, 'q_attr': obj.q_attr, "number": obj.number,
                       "end_number": end_num, "order": order, 'q_title': obj.q_title,
                         'q_title_html': obj.q_title_html, "options": options}
-            return Response({"detail": "success", "data": result})
+            return Response({"detail": "success", "data": result, 'title': title})
 
 class QuestionView(CreateAPIView):
     permission_classes = (WexinPermission,)
@@ -196,6 +200,22 @@ class ResultView(CreateAPIView):
         data = request.data
         qt_id = data.get('u_id','')
         ans_id = data.get('ans_id', '')
+        token = request.META.get('HTTP_AUTHORIZATION')
+        user_id = get_user_id(token)
+        qt = QuestionType.objects.filter(u_id=qt_id).first()
+        if not qt:
+            title = ''
+        else:
+            title = qt.title
+        if not ans_id: # 没有ans_id 获取历史的问卷结果
+            obj = UserAnswer.objects.filter(qt_id=qt_id, user_id=user_id).order_by('-update_time').first()
+            if not obj:
+                result = {}
+            else:
+                result = obj.result
+            return Response({"detail": "success", "data": result, 'title':title})
+        # 统计完成数据,必须在生成结果前统计
+        count_finish_number(user_id, qt_id, ans_id)
         generate_result(qt_id, ans_id)
         # 生成结果
         obj = UserAnswer.objects.filter(u_id=ans_id, qt_id=qt_id).first()
@@ -203,6 +223,4 @@ class ResultView(CreateAPIView):
             result = {}
         else:
             result = obj.result
-        # 统计完成数据
-        count_finish_number(request, qt_id)
-        return Response({"detail": "success", "data": result})
+        return Response({"detail": "success", "data": result, 'title': title})
