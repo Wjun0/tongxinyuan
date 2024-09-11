@@ -221,7 +221,6 @@ class UndoCheckView(CreateAPIView): # 撤销审核
             return Response({"detail": "非待审核数据不支持撤销！"}, status=400)
         return Response({"detail": "问卷不存在！"}, status=400)
 
-
 class SubmitCheckResultView(CreateAPIView):
     queryset = Question_tmp.objects.all()
     permission_classes = (idAdminAndCheckerPermission,)

@@ -120,7 +120,7 @@ class GETQuestionView(CreateAPIView):
         qt_id = data.get('u_id')
         last_number = data.get('last_number')
         last_q_id = data.get('last_q_id')
-        last_o_number = data.get('last_o_number')
+        last_o_number = data.get('last_o_number', '')
         qt = QuestionType.objects.filter(u_id=qt_id).first()
         if not qt:
             title = ''
@@ -142,7 +142,17 @@ class GETQuestionView(CreateAPIView):
             # 获取第一题
             result = self.get_result(qt_id, order, end_num, number="1")
             return Response({"detail": "success", "data": result, 'title': title})
+        l_q = Question.objects.filter(qt_id=qt_id, number=last_number).first()
+        if not l_q:
+            Response({"detail": "找不到上一题的数据！"}, status=400)
+        if l_q.q_type == "问答题":
+            # 没有定义下一题
+            number = int(last_number) + 1
+            result = self.get_result(qt_id, order, end_num, number=str(number))
+            return Response({"detail": "success", "data": result, 'title': title})
 
+        if  ',' in last_o_number: # 如果是多选题，按第一个选项的顺序跳转
+            last_o_number = last_o_number.split(',')[0]
         obj = Option.objects.filter(q_id=last_q_id, o_number=last_o_number).first()
         if not obj:
             return Response({"detail": "找不到对应的数据"}, status=400)
@@ -174,8 +184,19 @@ class QuestionView(CreateAPIView):
         o_number = data.get('o_number','')
         text = data.get('text','')
         ans_id = data.get('ans_id','')
-        if not(qt_id and q_id and o_number):
+        if not(qt_id and q_id):
             return Response({"detail": "参数错误！"}, status=400)
+        obj = Question.objects.filter(u_id=q_id, qt_id=qt_id).first()
+        if not obj:
+            return Response({"detail": "回答问题不存在！"}, status=400)
+        if obj.q_type == "单选题":
+            if o_number not in ["A", 'B', 'C', 'D', 'E', 'F']:
+                return Response({"detail": "不存在该选项！"}, status=400)
+        if obj.q_type == "多选题":
+            o_number_list = o_number.split(',')
+            for i in o_number_list:
+                if i not in ["A", 'B', 'C', 'D', 'E', 'F']:
+                    return Response({"detail": "错误的选项！"}, status=400)
         token = request.META.get('HTTP_AUTHORIZATION')
         user_id = get_user_id(token)
         if not ans_id:

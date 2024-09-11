@@ -3,7 +3,7 @@ import uuid
 
 from django.db.models import Q
 
-from apps.questions.check_data_service import check_start_end_time, check_img
+from apps.questions.check_data_service import check_start_end_time, check_img, check_add_question
 from apps.questions.models import Question, Option, Calculate_Exp, Question_tmp, Option_tmp, Calculate_Exp_tmp, \
     Result_Title, Result_Title_tmp, Dimension, Dimension_tmp, QuestionType_tmp, QuestionType
 from apps.users.exceptions import Exception_
@@ -46,6 +46,7 @@ def add_question(request):
     questions = data.get('questions')
     res = []
     del_q_id = []  # 删除使用
+    check_add_question(data)
     for q in questions:
         q_id = q.get('q_id')
         if not q_id: # 新增时需要添加q_uid
@@ -123,9 +124,11 @@ def add_calculate(request):
     Calculate_Exp_tmp.objects.filter(qt_id=qt_id).delete()
     for i in exp:
         i['qt_id'] = qt_id
-        u_id = str(uuid.uuid4())
-        i['u_id'] = u_id
-        dic = {'u_id': u_id, 'qt_id': qt_id, "exp_name": i.get('exp_name'), "exp_type": i.get('exp_type'),
+        exp_id = i.get('exp_id', '')
+        if not i.get('exp_id'):
+            exp_id = str(uuid.uuid4())
+        i['u_id'] = exp_id
+        dic = {'u_id': exp_id, 'qt_id': qt_id, "exp_name": i.get('exp_name'), "exp_type": i.get('exp_type'),
                 "formula": json.dumps(i.get('formula', [])), "exp": i.get('exp')}
         Calculate_Exp_tmp.objects.create(**dic)
     return
@@ -294,7 +297,8 @@ def copy_tmp_table(qt_id):
     q_uid_list = []
     for i in qq:
         q_uid_list.append(i.u_id)  # 记录更新的id,不在里面的需要删除
-        Question.objects.update_or_create(qt_id=qt_id, u_id=i.u_id, defaults={'q_type':i.q_type,
+        Question.objects.update_or_create(qt_id=qt_id, number=i.number,
+                                          defaults={'u_id':i.u_id, 'q_type':i.q_type,
                         'q_attr': i.q_attr, 'q_value_type':i.q_value_type, 'q_title': i.q_title,
                         'q_title_html':i.q_title_html, 'number':i.number, 'q_check_role':i.q_check_role,
                         "min_age": i.min_age,'max_age': i.max_age, 'sex': i.sex,

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from apps.questions.models import Image
+from apps.questions.models import Image, QuestionType_tmp
 from apps.users.exceptions import Exception_
 
 
@@ -21,3 +21,19 @@ def check_img(img_id, type):
         raise Exception_("文件不存在！")
     return True
 
+
+def check_add_question(data):
+    qt_id = data.get("qt_id")
+    questions = data.get('questions')
+    qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+    if not qt:
+        raise Exception_('问卷不存在！')
+    index = 1
+    for i in questions:
+        number = i.get('number')
+        try:
+            if int(number) != index:
+                raise Exception_(f'问题编号{index}错误！')
+            index += 1
+        except Exception as e:
+            raise Exception_(f'不支持该题目编号{number}！')
