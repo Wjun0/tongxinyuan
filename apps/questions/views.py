@@ -161,8 +161,10 @@ class GetquestionsView(ListAPIView):
         questions = []
         q_id_list = []
         for q in query:
-            questions.append({"number": q.number, "q_id": q.u_id})
-            q_id_list.append(q.u_id)
+            if q.q_attr == "普通题": # 将性别题和年龄题去除
+                if q.q_type != "问答题":
+                    questions.append({"number": q.number, "q_id": q.u_id})
+                    q_id_list.append(q.u_id)
         ans = Option_tmp.objects.filter(q_id__in=q_id_list)
         an_set = set()
         value_list = []

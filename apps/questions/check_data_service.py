@@ -1,8 +1,6 @@
 from datetime import datetime
-
 from apps.questions.models import Image, QuestionType_tmp
 from apps.users.exceptions import Exception_
-
 
 def check_start_end_time(start_time, end_time):
     try:
@@ -14,26 +12,46 @@ def check_start_end_time(start_time, end_time):
     except ValueError:
         raise Exception_("时间格式不正确！")
 
-
 def check_img(img_id, type):
     obj = Image.objects.filter(file_id=img_id, source=type).first()
     if not obj:
         raise Exception_("文件不存在！")
     return True
 
-
 def check_add_question(data):
     qt_id = data.get("qt_id")
     questions = data.get('questions')
+    o_number_list = [chr(x) for x in range(65, 85)]  # ABC...T
     qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
     if not qt:
         raise Exception_('问卷不存在！')
     index = 1
     for i in questions:
         number = i.get('number')
+        q_type = i.get('q_type')
+        q_options = i.get('q_options')
+        if q_type not in ['单选题', '多选题', '问答题']:
+            raise Exception_('不支持该种题目类型！')
         try:
             if int(number) != index:
                 raise Exception_(f'问题编号{index}错误！')
             index += 1
         except Exception as e:
             raise Exception_(f'不支持该题目编号{number}！')
+        if len(q_options) > 20:
+            raise Exception_('最多支持20个选项！')
+        for j in q_options:
+            o_number = j.get('o_number')
+            if o_number not in o_number_list:
+                raise Exception_(f'不支持的选项{o_number}')
+
+def check_add_calculate(data):
+    qt_id = data.get('qt_id')
+    exp = data.get('exp', [])
+    order = data.get('order')
+    qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+    if not qt:
+        raise Exception_('问卷不存在！')
+    if len(exp) > 300:
+        raise Exception_('最多支持300个因子！')
+    return

@@ -3,7 +3,7 @@ import uuid
 
 from django.db.models import Q
 
-from apps.questions.check_data_service import check_start_end_time, check_img, check_add_question
+from apps.questions.check_data_service import check_start_end_time, check_img, check_add_question, check_add_calculate
 from apps.questions.models import Question, Option, Calculate_Exp, Question_tmp, Option_tmp, Calculate_Exp_tmp, \
     Result_Title, Result_Title_tmp, Dimension, Dimension_tmp, QuestionType_tmp, QuestionType
 from apps.users.exceptions import Exception_
@@ -48,7 +48,7 @@ def add_question(request):
     del_q_id = []  # 删除使用
     check_add_question(data)
     for q in questions:
-        q_id = q.get('q_id')
+        q_id = q.get('u_id')
         if not q_id: # 新增时需要添加q_uid
             q_id = str(uuid.uuid4())
         number = q.get('number')
@@ -57,16 +57,16 @@ def add_question(request):
                   "q_title": q.get('q_title'), "q_title_html": q.get('q_title_html'),
                   "q_check_role": q.get('q_check_role'),
                   "min_age": q.get('min_age'), 'max_age': q.get('max_age'), 'sex': q.get('sex')}
-        cre = Question_tmp.objects.update_or_create(qt_id=qt_id, number=number, defaults=q_data)
+        cre = Question_tmp.objects.update_or_create(u_id=q_id, defaults=q_data)
         del_q_id.append(q_id)
         a_data_list = []
         del_a_id = [] # 删除使用
         for a in q.get('q_options', []):
-            a_id = q.get('o_id')
+            a_id = a.get('u_id')
             if not a_id:
                 a_id = str(uuid.uuid4())
             a_data = {"u_id": a_id, "q_id": q_id, "o_number": a.get('o_number'), "o_content": a.get('o_content'), "o_html_content": a.get('o_html_content')}
-            an_cre = Option_tmp.objects.update_or_create(u_id=a_id, q_id=q_id, defaults=a_data)
+            an_cre = Option_tmp.objects.update_or_create(u_id=a_id, defaults=a_data)
             del_a_id.append(a_id)
             a_data_list.append({"u_id": a_id, "q_id": q_id, "o_number": a.get('o_number'),
                                  "o_content": a.get('o_content'), "o_html_content": a.get('o_html_content')})
@@ -87,7 +87,7 @@ def get_option_data(request):
         ops_list = []
         for op in ops:
             ops_list.append({"o_number": op.o_number, "o_content": op.o_content, "value": op.value})
-        result.append({"q_id": q.u_id, "number": q.number, "q_check_role": q.q_check_role, "q_options": ops_list})
+        result.append({"q_id": q.u_id, 'q_attr': q.q_attr, 'q_type': q.q_type, "number": q.number, "q_check_role": q.q_check_role, "q_options": ops_list})
     return result
 
 def get_question_option(request):
@@ -111,6 +111,7 @@ def add_calculate(request):
     qt_id = data.get('qt_id')
     exp = data.get('exp')
     order = data.get('order')
+    check_add_calculate(data)
     # 将以前录入的排序清空
     qs = Question_tmp.objects.filter(qt_id=qt_id)
     q_id_list = []

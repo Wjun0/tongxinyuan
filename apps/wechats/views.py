@@ -190,12 +190,13 @@ class QuestionView(CreateAPIView):
         if not obj:
             return Response({"detail": "回答问题不存在！"}, status=400)
         if obj.q_type == "单选题":
-            if o_number not in ["A", 'B', 'C', 'D', 'E', 'F']:
+            # if o_number not in ["A", 'B', 'C', 'D', 'E', 'F']:
+            if o_number not in [chr(i) for i in range(65, 85)]:
                 return Response({"detail": "不存在该选项！"}, status=400)
         if obj.q_type == "多选题":
             o_number_list = o_number.split(',')
             for i in o_number_list:
-                if i not in ["A", 'B', 'C', 'D', 'E', 'F']:
+                if i not in [chr(i) for i in range(65, 85)]:
                     return Response({"detail": "错误的选项！"}, status=400)
         token = request.META.get('HTTP_AUTHORIZATION')
         user_id = get_user_id(token)

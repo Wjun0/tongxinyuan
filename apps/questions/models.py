@@ -66,7 +66,7 @@ class Question(models.Model):
     id = models.AutoField(primary_key=True)
     u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
     qt_id = models.CharField(max_length=128, default='', verbose_name="问卷类型id")
-    q_type = models.CharField(max_length=128, default='', verbose_name="问卷类型 单选|多选|简答")
+    q_type = models.CharField(max_length=128, default='', verbose_name="问卷类型 单选|多选|问答题")
     q_attr = models.CharField(max_length=128, default='', verbose_name="问卷属性 普通题|性别题|年龄题")
     q_value_type = models.CharField(max_length=128, default='', verbose_name="问卷赋值类型 分值|专制|D")
     q_title = models.TextField(default='', verbose_name="问卷标题")
@@ -81,7 +81,6 @@ class Question(models.Model):
 
     class Meta:
         db_table = "tong_question"
-        unique_together = [['qt_id', 'number']]
 
 class Question_tmp(models.Model):
     # 问题表
@@ -103,7 +102,6 @@ class Question_tmp(models.Model):
 
     class Meta:
         db_table = "tong_question_tmp"
-        unique_together = [['qt_id', 'number']]
 
 class Option(models.Model):
     # 选项表
@@ -120,7 +118,7 @@ class Option(models.Model):
 
     class Meta:
         db_table = "tong_option"
-        unique_together = [['q_id', 'o_number']]
+
 
 class Option_tmp(models.Model):
     # 选项表
@@ -137,7 +135,6 @@ class Option_tmp(models.Model):
 
     class Meta:
         db_table = "tong_option_tmp"
-        unique_together = [['q_id', 'o_number']]
 
 class Calculate_Exp(models.Model):
     # 计算因子表
