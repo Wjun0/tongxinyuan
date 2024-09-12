@@ -360,7 +360,7 @@ class IndexView(CreateAPIView):
         return Response(serializer.data)
 
 class CheckIndexView(CreateAPIView):
-    queryset = QuestionType_tmp.objects.filter(status_tmp__in=["审核拒绝", "已上线", "待审核", "已上线（草稿待审核）"])
+    queryset = QuestionType_tmp.objects.filter(status_tmp__in=["审核拒绝", "已上线", "待审核", "已上线（草稿待审核）", '已上线（有草稿）'])
     serializer_class = QuestionTypeTMPListSerializers
     pagination_class = ResultsSetPagination
     permission_classes = (isManagementPermission,)

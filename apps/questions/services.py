@@ -3,7 +3,8 @@ import uuid
 
 from django.db.models import Q
 
-from apps.questions.check_data_service import check_start_end_time, check_img, check_add_question, check_add_calculate
+from apps.questions.check_data_service import check_start_end_time, check_img, check_add_question, check_add_calculate, \
+    check_add_result
 from apps.questions.models import Question, Option, Calculate_Exp, Question_tmp, Option_tmp, Calculate_Exp_tmp, \
     Result_Title, Result_Title_tmp, Dimension, Dimension_tmp, QuestionType_tmp, QuestionType
 from apps.users.exceptions import Exception_
@@ -156,7 +157,8 @@ def get_calculate(request):
 def add_result(request):
     data = request.data
     qt_id = data.get('qt_id')
-    results = data.get('results')
+    results = data.get('results', [])
+    check_add_result(data)  # 数据校验
     del_r_id_list = []
     for r in results:
         uid = r.get('r_id')

@@ -1,5 +1,5 @@
 from datetime import datetime
-from apps.questions.models import Image, QuestionType_tmp
+from apps.questions.models import Image, QuestionType_tmp, Question_tmp, Calculate_Exp_tmp
 from apps.users.exceptions import Exception_
 
 def check_start_end_time(start_time, end_time):
@@ -50,8 +50,47 @@ def check_add_calculate(data):
     exp = data.get('exp', [])
     order = data.get('order')
     qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+    ques = Question_tmp.objects.filter(qt_id=qt_id).values('u_id')
+    q_id_list = []
+    for q in ques:
+        q_id_list.append(q['u_id'])
     if not qt:
         raise Exception_('问卷不存在！')
     if len(exp) > 300:
         raise Exception_('最多支持300个因子！')
+    for e in exp:
+        formula = e.get('formula',[])
+        exp_name = e.get('exp_name','')
+        for fm in formula:
+            if fm.get('type') == "question_id":
+                value = fm.get('value')
+                if value not in q_id_list:
+                    raise Exception_(f'{exp_name} 配置错误，请重新配置！')
+    return
+
+
+def check_add_result(data):
+    qt_id = data.get('qt_id')
+    results = data.get('results', [])
+    exp_id_list = []
+    exps = Calculate_Exp_tmp.objects.filter(qt_id=qt_id).values('u_id')
+    for e in exps:
+        exp_id_list.append(e['u_id'])
+    qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+    if not qt:
+        raise Exception_('问卷不存在！')
+    if len(results) <= 0:
+        raise Exception_('未配置问卷结果！')
+    for i in results:
+        dims = i.get('dimension', [])
+        for j in dims:
+            d_res = j.get('d_result', [])
+            for k in d_res:
+                value = k.get('value', {})
+                result_name = k.get('result_name')
+                factor_list = value.get('factor_list', [])
+                for f in factor_list:
+                    exp_id = f.get('exp_id')
+                    if exp_id not in exp_id_list:
+                        raise Exception_(f'{result_name} 配置错误，请重新配置！')
     return
