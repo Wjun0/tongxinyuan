@@ -43,6 +43,12 @@ def generate_user_answer_data(answer):
     # 生成用户选择的数据结果
     result = {}
     for q_id,v in answer.items():
+        # 需要将性别题和年龄题去掉
+        q = Question.objects.filter(u_id=q_id).first()
+        if not q:
+            continue
+        if q.q_attr in ['性别题', '年龄题']:
+            continue
         o_number = v.get('o_number')
         if ',' in o_number: # 多选题
             o_number_list = o_number.split(',')

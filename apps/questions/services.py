@@ -37,8 +37,8 @@ def add_question_type(request):
     #     float(test_time)
     # except Exception as e:
     #     raise Exception_("预计用时只支持数字（支持小数）")
-    if len(title) > 18:
-        raise Exception_("问卷标题不超过18个字!")
+    if len(title) > 54:
+        raise Exception_("问卷标题不超过54个字!")
     return True
 
 def add_question(request):
