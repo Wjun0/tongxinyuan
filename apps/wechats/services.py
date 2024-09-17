@@ -10,8 +10,8 @@ from apps.users.exceptions import Exception_
 from apps.users.utils import get_user_id
 from apps.wechats.models import UserAnswer, UserShow_number
 
-format_dic = {"大于": ">", "大于等于": ">=",
-              "小于": "<", "小于等于": "<=",
+format_dic = {"大于": ">", "大于或等于": ">=",
+              "小于": "<", "小于或等于": "<=",
               "等于": "=", "不等于": "!="}
 
 def check_age(qt_id, min_age_max_age, answer):

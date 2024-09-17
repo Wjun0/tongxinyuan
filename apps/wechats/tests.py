@@ -70,5 +70,5 @@ def test_answer(qt_id):
 
 
 if __name__ == '__main__':
-    test_answer('cd649a6b-6675-44c3-b2e1-378913ef4127')
+    test_answer('1422b2be-f116-4b59-af88-1aa91149e463')
 
