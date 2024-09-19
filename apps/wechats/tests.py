@@ -1,21 +1,23 @@
 import random
 import requests
+# domain = "http://127.0.0.1:8081"
+domain = "https://api.uat.tong-psy.com"
 headers = {
     "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvTEZDcTVWa2s0YjlWMjJDS1pWWEl5ZlZ5b1FBIiwiaWF0IjoxNzI0NjgxMDQyLjcxODE2MDl9fQ.rd8e26ry0VBOUbaO1Y8ftJldElGFZkuFWveabko3ET4"
 }
 
 def _get_question(data):
-    url = "http://127.0.0.1:8081/wechat/v1/get_question/"
+    url = f"{domain}/wechat/v1/get_question/"
     resp = requests.post(url, json=data, headers=headers)
     return resp.json()
 
 def _answer_question(data):
-    url = "http://127.0.0.1:8081/wechat/v1/answer/"
+    url = f"{domain}/wechat/v1/answer/"
     resp = requests.post(url, json=data, headers=headers)
     return resp.json()
 
 def _get_result(data):
-    url = "http://127.0.0.1:8081/wechat/v1/result/"
+    url = f"{domain}/wechat/v1/result/"
     resp = requests.post(url, json=data, headers=headers)
     print('=========结果=========')
     print(resp.json())
@@ -52,6 +54,7 @@ def test_answer(qt_id):
             text = "text"
         if q_type == "单选题":
             o_number = random.choice(o_list)
+            o_number = "A"
         if q_type == "多选题":
             o_number = random.choice(o_list)
 
@@ -66,9 +69,13 @@ def test_answer(qt_id):
             r_data = {"u_id": qt_id, "ans_id": ans_id}
             result = _get_result(r_data)
             print(result)
+            data = result.get('data')
+            for i in data.get('dim_list'):
+                print(i)
             break
 
 
 if __name__ == '__main__':
-    test_answer('1422b2be-f116-4b59-af88-1aa91149e463')
+    # test_answer('69838d9d-7faa-48b2-921c-bba2e04c2640')
+    test_answer('60057b36-49ca-4408-bfdf-0841517fd6b1')
 

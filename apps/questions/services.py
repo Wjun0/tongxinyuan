@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 
 from django.db.models import Q
@@ -336,7 +337,7 @@ def copy_tmp_table(qt_id):
             'background_img': r.background_img, 'statement': r.statement,
             'result_img': r.result_img, 'create_time': r.create_time, 'update_time':r.update_time
         })
-    Result_Title.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=res_uid_list))
+    Result_Title.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=res_uid_list)).delete()
 
     dim = Dimension_tmp.objects.filter(qt_id=qt_id, r_id__in=res_uid_list)
     dim_uid_list = []
@@ -347,6 +348,7 @@ def copy_tmp_table(qt_id):
             'result_number': d.result_number, 'result_name': d.result_name, 'result_name_html':d.result_name_html,
             'result_desc': d.result_desc, 'result_desc_html': d.result_desc_html, 'value': d.value
         })
+    Dimension.objects.filter(qt_id=qt_id).filter(~Q(r_id__in=res_uid_list)).delete()
     Dimension.objects.filter(qt_id=qt_id, r_id__in=res_uid_list).filter(~Q(u_id__in=dim_uid_list)).delete()
 
     return
@@ -426,6 +428,7 @@ def copy_question(qt_id, user):
             show_number=0, finish_number=0, update_user=user, create_user=user, check_user='',
             start_time=q.start_time, end_time=q.end_time)
         ques = Question_tmp.objects.filter(qt_id=qt_id)
+        old_new_dic = {}
         for i in ques:
             new_q_id = str(uuid.uuid4())
             Question_tmp.objects.create(u_id=new_q_id, qt_id=new_qt_id, q_type=i.q_type, q_attr=i.q_attr,
@@ -433,10 +436,73 @@ def copy_question(qt_id, user):
                         number=i.number, q_check_role=i.q_check_role, min_age=i.min_age, max_age=i.max_age,
                         sex=i.sex)
             ops = Option_tmp.objects.filter(q_id=i.u_id)
+            old_new_dic[i.u_id] = new_q_id
             for op in ops:
                 o_u_id = str(uuid.uuid4())
                 Option_tmp.objects.create(u_id=o_u_id, q_id=new_q_id, o_number=op.o_number, o_content=op.o_content,
                         o_html_content=op.o_html_content, next_q_id='', value=op.value)
+        for j in ques:
+            ops = Option_tmp.objects.filter(q_id=j.u_id)
+            for k in ops:
+                if k.next_q_id:
+                    new_q_id = old_new_dic.get(k.u_id)
+                    new_next_q_id = old_new_dic.get(k.next_q_id)
+                    Option_tmp.objects.filter(u_id=new_q_id).update(next_q_id=new_next_q_id)
+
+        old_exp_dic = {}
+        exps = Calculate_Exp_tmp.objects.filter(qt_id=qt_id)
+        for e in exps:
+            new_exp_id = str(uuid.uuid4())
+            formula = e.formula
+            par = re.compile(r'{.*?}', )
+            exp_str = e.exp
+            res = par.findall(e.exp)
+            for r in res:  # 将所有的变量都替换为值
+                key = r.replace('{', '').replace('}', '')
+                v = old_new_dic.get(key, '')
+                exp_str = exp_str.replace(key, v)
+            new_formula = []
+            for f in eval(formula):
+                if f.get('type') == "question_id":
+                    value = f.get('value')
+                    new_value = old_new_dic.get(value, '')
+                    f['value'] = new_value
+                new_formula.append(f)
+            Calculate_Exp_tmp.objects.create(u_id=new_exp_id, qt_id=new_qt_id, exp_name=e.exp_name,
+                                            exp_type=e.exp_type, exp=exp_str, formula=json.dumps(new_formula),
+                                            create_time=e.create_time, update_time=e.update_time)
+            old_exp_dic[e.u_id] = new_exp_id
+
+        old_rt_id_dic = {}
+        rts = Result_Title_tmp.objects.filter(qt_id=qt_id)
+        for rt in rts:
+            r_id = str(uuid.uuid4())
+            Result_Title_tmp.objects.create(u_id=r_id, qt_id=new_qt_id, background_img=rt.background_img,
+                                            statement=rt.statement, result_img=rt.result_img,
+                                            create_time=rt.create_time, update_time=rt.update_time)
+            old_rt_id_dic[rt.u_id] = r_id
+
+        dims = Dimension_tmp.objects.filter(qt_id=qt_id)
+        for d in dims:
+            d_id = str(uuid.uuid4())
+            new_r_id = old_rt_id_dic.get(d.r_id, '')
+            value = d.value
+            factor_list = value.get('factor_list', [])
+            new_factor_list = []
+            for i in factor_list:
+                exp_id = i.get('exp_id')
+                new_exp_id = old_exp_dic.get(exp_id)
+                i['exp_id'] = new_exp_id
+                new_factor_list.append(i)
+            new_value = {}
+            new_value['value'] = value.get('value', '')
+            new_value['numKeys'] = value.get('numKeys', '')
+            new_value['condition'] = value.get('condition', '')
+            new_value['factor_list'] = new_factor_list
+            Dimension_tmp.objects.create(u_id=d_id, qt_id=new_qt_id, r_id=new_r_id, dimension_number=d.dimension_number,
+                                         dimension_name=d.dimension_name, result_number=d.result_number,
+                                         result_name=d.result_name, result_name_html=d.result_name_html,
+                                         result_desc=d.result_desc, result_desc_html=d.result_desc_html, value=new_value)
         return new_qt_id, title
     return None
 
