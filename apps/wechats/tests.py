@@ -1,9 +1,9 @@
 import random
 import requests
-# domain = "http://127.0.0.1:8081"
-domain = "https://api.uat.tong-psy.com"
+domain = "http://127.0.0.1:8081"
+# domain = "https://api.uat.tong-psy.com"
 headers = {
-    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvTEZDcTVWa2s0YjlWMjJDS1pWWEl5ZlZ5b1FBIiwiaWF0IjoxNzI0NjgxMDQyLjcxODE2MDl9fQ.rd8e26ry0VBOUbaO1Y8ftJldElGFZkuFWveabko3ET4"
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvTEZDcTVWa2s0YjlWMjJDS1pWWEl5ZlZ5b1FBIiwiaWF0IjoxNzI0NTEzMTgzLjQyMzg1NTV9fQ.aBZWeBhqn4tp29nkIkNECD1wwc5tMicmksy3vZPd9hI"
 }
 
 def _get_question(data):
@@ -31,12 +31,13 @@ def test_answer(qt_id):
     o_number = ''
     text = ""
     ans_id = ""
-
+    tmp = "tmpaaa"
     while True:
         data = {"u_id": qt_id,
                 "last_q_id": last_q_id,
                 "last_number": last_number,
-                "last_o_number": last_o_number}
+                "last_o_number": last_o_number,
+                "tmp": "tmp"}
         resp = _get_question(data)
         r_data = resp.get('data')
         q_id = r_data.get('q_id')
@@ -58,7 +59,7 @@ def test_answer(qt_id):
         if q_type == "多选题":
             o_number = random.choice(o_list)
 
-        ans = {"u_id": qt_id, "q_id": q_id, "o_number": o_number, "text": text, "ans_id": ans_id}
+        ans = {"u_id": qt_id, "q_id": q_id, "o_number": o_number, "text": text, "ans_id": ans_id, "tmp": tmp}
         ans_resp = _answer_question(ans)
         ans_id = ans_resp.get('data').get('ans_id')
         last_q_id = q_id
@@ -66,7 +67,7 @@ def test_answer(qt_id):
         last_o_number = o_number
 
         if int(number) == int(end_number):
-            r_data = {"u_id": qt_id, "ans_id": ans_id}
+            r_data = {"u_id": qt_id, "ans_id": ans_id, "tmp":tmp}
             result = _get_result(r_data)
             print(result)
             data = result.get('data')
@@ -77,5 +78,5 @@ def test_answer(qt_id):
 
 if __name__ == '__main__':
     # test_answer('69838d9d-7faa-48b2-921c-bba2e04c2640')
-    test_answer('60057b36-49ca-4408-bfdf-0841517fd6b1')
+    test_answer('55642b1e-1b29-487a-aafd-557ffdf3d088')
 

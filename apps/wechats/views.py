@@ -11,14 +11,15 @@ from rest_framework.generics import ListAPIView, CreateAPIView
 from rest_framework.response import Response
 from weixin import WXAPPAPI
 
-from apps.questions.models import QuestionType, Question, Option
+from apps.questions.models import QuestionType, Question, Option, QuestionType_tmp, Question_tmp, Option_tmp
 from apps.users.models import User
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import WexinPermission
 from apps.users.utils import get_user_id
-from apps.wechats.models import UserAnswer
+from apps.wechats.models import UserAnswer, UserAnswer_tmp
 from apps.wechats.serizlizers import QuestionTypeListSerializers
 from apps.wechats.services import generate_result, count_finish_number, count_show_number, check_user_answer
+from apps.wechats.tmp_service import get_tmp_result, get_user_tmp_answer_result
 from utils.generate_jwt import generate_jwt
 
 
@@ -46,18 +47,32 @@ class LoginAPIView(CreateAPIView):
             logger.error(e)
             return Response({"detail": "无效的code"}, status=400)
 
-class GetPhoneAPIView(CreateAPIView):
+class GetPhoneAPIView(CreateAPIView, ListAPIView):
+    permission_classes = (WexinPermission,)
+
+    def list(self, request, *args, **kwargs):
+        token = request.META.get('HTTP_AUTHORIZATION')
+        user_id = get_user_id(token)
+        user = User.objects.filter(user_id=user_id).first()
+        if not user:
+            return Response({'detail': "用户不存在！"}, status=400)
+        return Response({"detail": "success", "phone": user.mobile})
+
+
     def post(self, request, *args, **kwargs):
         code = request.data.get('code')
         try:
             # api = WXAPPAPI(appid=settings.WX_APPID, app_secret=settings.WX_SECRET)
             # info = api.exchange_code_for_session_key(code=code)
+            token = request.META.get('HTTP_AUTHORIZATION')
+            user_id = get_user_id(token)
             url = f"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={settings.WX_APPID}&secret={settings.WX_SECRET}"
             a_resp = requests.get(url)
             access_token = a_resp.json().get('access_token')
             get_phone_url = f"https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token={access_token}"
             resp = requests.post(get_phone_url, json={"code": code}, headers={"Content-Type": "application/json"})
             phone = resp.json().get('phone_info', {}).get('phoneNumber')
+            User.objects.filter(user_id=user_id).update(mobile=phone)
             return Response({"detail": "success", "data":{"phone": phone}})
         except Exception as e:
             logger = logging.getLogger("log")
@@ -78,6 +93,10 @@ class DetailView(ListAPIView):
     def list(self, request, *args, **kwargs):
         data = request.query_params
         qt_id = data.get("u_id")
+        tmp = data.get("tmp")
+        if tmp == "tmp":  # 获取临时问卷，测试答题
+            result = get_tmp_result(qt_id)
+            return Response({"detail": "success", "data": result, "user_is_answer": False})
         qt = self.get_queryset().filter(u_id=qt_id).first()
         if not qt:
             return Response({"detail": "问卷不存在！"}, status=400)
@@ -102,12 +121,18 @@ class DetailView(ListAPIView):
 class GETQuestionView(CreateAPIView):
     permission_classes = (WexinPermission,)
 
-    def get_result(self, qt_id, order, end_num, number="1"):
-        obj = Question.objects.filter(qt_id=qt_id, number=number).first()
+    def get_result(self, tmp, qt_id, order, end_num, number="1"):
+        if tmp == "tmp":
+            obj = Question_tmp.objects.filter(qt_id=qt_id, number=number).first()
+        else:
+            obj = Question.objects.filter(qt_id=qt_id, number=number).first()
         if not obj:
             return {}  # 最后一题
         options = []
-        op = Option.objects.filter(q_id=obj.u_id)
+        if tmp =="tmp":
+            op = Option_tmp.objects.filter(q_id=obj.u_id)
+        else:
+            op = Option.objects.filter(q_id=obj.u_id)
         for i in op:
             options.append({"o_number": i.o_number, "o_content": i.o_content, "o_html_content": i.o_html_content})
         result = {"q_id": obj.u_id, 'q_type': obj.q_type, 'q_attr': obj.q_attr,
@@ -121,17 +146,27 @@ class GETQuestionView(CreateAPIView):
         last_number = data.get('last_number')
         last_q_id = data.get('last_q_id')
         last_o_number = data.get('last_o_number', '')
-        qt = QuestionType.objects.filter(u_id=qt_id).first()
+        tmp = data.get('tmp', '')
+        if tmp =="tmp":
+            qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
+        else:
+            qt = QuestionType.objects.filter(u_id=qt_id).first()
         if not qt:
             title = ''
         else:
             title = qt.title
         # 判断题目是否是顺序题
-        q = Question.objects.filter(qt_id=qt_id).values('u_id')
+        if tmp =="tmp":
+            q = Question_tmp.objects.filter(qt_id=qt_id).values('u_id')
+        else:
+            q = Question.objects.filter(qt_id=qt_id).values('u_id')
         q_u_id_list = []
         for i in q:
             q_u_id_list.append(i['u_id'])
-        ops = Option.objects.filter(q_id__in=q_u_id_list)
+        if tmp == "tmp":
+            ops = Option_tmp.objects.filter(q_id__in=q_u_id_list)
+        else:
+            ops = Option.objects.filter(q_id__in=q_u_id_list)
         end_num = str(len(q))
         order = False
         for j in ops:
@@ -140,33 +175,45 @@ class GETQuestionView(CreateAPIView):
                 break
         if not last_q_id and not last_o_number:
             # 获取第一题
-            result = self.get_result(qt_id, order, end_num, number="1")
+            result = self.get_result(tmp, qt_id, order, end_num, number="1")
             return Response({"detail": "success", "data": result, 'title': title})
-        l_q = Question.objects.filter(qt_id=qt_id, number=last_number).first()
+        if tmp == "tmp":
+            l_q = Question_tmp.objects.filter(qt_id=qt_id, number=last_number).first()
+        else:
+            l_q = Question.objects.filter(qt_id=qt_id, number=last_number).first()
         if not l_q:
             Response({"detail": "找不到上一题的数据！"}, status=400)
         if l_q.q_type == "问答题":
             # 没有定义下一题
             number = int(last_number) + 1
-            result = self.get_result(qt_id, order, end_num, number=str(number))
+            result = self.get_result(tmp, qt_id, order, end_num, number=str(number))
             return Response({"detail": "success", "data": result, 'title': title})
 
         if  ',' in last_o_number: # 如果是多选题，按第一个选项的顺序跳转
             last_o_number = last_o_number.split(',')[0]
-        obj = Option.objects.filter(q_id=last_q_id, o_number=last_o_number).first()
+        if tmp == "tmp":
+            obj = Option_tmp.objects.filter(q_id=last_q_id, o_number=last_o_number).first()
+        else:
+            obj = Option.objects.filter(q_id=last_q_id, o_number=last_o_number).first()
         if not obj:
             return Response({"detail": "找不到对应的数据"}, status=400)
         if not obj.next_q_id or obj.next_q_id==0:
             # 没有定义下一题
             number = int(last_number) + 1
-            result = self.get_result(qt_id, order, end_num, number=str(number))
+            result = self.get_result(tmp, qt_id, order, end_num, number=str(number))
             return Response({"detail": "success", "data": result, 'title': title})
         else:  # 根据上一题获取下一题
-            obj = Question.objects.filter(qt_id=qt_id, u_id=obj.next_q_id).first()
+            if tmp == "tmp":
+                obj = Question_tmp.objects.filter(qt_id=qt_id, u_id=obj.next_q_id).first()
+            else:
+                obj = Question.objects.filter(qt_id=qt_id, u_id=obj.next_q_id).first()
             if not obj:
                 return Response({"detail": "success", "data": {}})
             options = []
-            op = Option.objects.filter(q_id=obj.u_id)
+            if tmp == "tmp":
+                op = Option_tmp.objects.filter(q_id=obj.u_id)
+            else:
+                op = Option.objects.filter(q_id=obj.u_id)
             for i in op:
                 options.append({"o_number": i.o_number, "o_content": i.o_content, "o_html_content": i.o_html_content})
             result = {"q_id": obj.u_id, 'q_type': obj.q_type, 'q_attr': obj.q_attr, "number": obj.number,
@@ -184,9 +231,13 @@ class QuestionView(CreateAPIView):
         o_number = data.get('o_number','')
         text = data.get('text','')
         ans_id = data.get('ans_id','')
+        tmp = data.get('tmp','')
         if not(qt_id and q_id):
             return Response({"detail": "参数错误！"}, status=400)
-        obj = Question.objects.filter(u_id=q_id, qt_id=qt_id).first()
+        if tmp == "tmp":
+            obj = Question_tmp.objects.filter(u_id=q_id, qt_id=qt_id).first()
+        else:
+            obj = Question.objects.filter(u_id=q_id, qt_id=qt_id).first()
         if not obj:
             return Response({"detail": "回答问题不存在！"}, status=400)
         if obj.q_type == "单选题":
@@ -204,9 +255,15 @@ class QuestionView(CreateAPIView):
             ans_id = str(uuid.uuid4())
             an = {q_id: {"o_number": o_number, "text": text}}
             default = {"u_id": ans_id, 'user_id': user_id, 'qt_id':qt_id, "answer": an, "result": {}}
-            UserAnswer.objects.update_or_create(u_id=ans_id, user_id=user_id, qt_id=qt_id, defaults=default)
+            if tmp == "tmp":
+                UserAnswer_tmp.objects.update_or_create(u_id=ans_id, user_id=user_id, qt_id=qt_id, defaults=default)
+            else:
+                UserAnswer.objects.update_or_create(u_id=ans_id, user_id=user_id, qt_id=qt_id, defaults=default)
             return Response({"detail": "success", "data": {"ans_id": ans_id}})
-        obj = UserAnswer.objects.filter(u_id=ans_id, user_id=user_id, qt_id=qt_id).first()
+        if tmp == "tmp":
+            obj = UserAnswer_tmp.objects.filter(u_id=ans_id, user_id=user_id, qt_id=qt_id).first()
+        else:
+            obj = UserAnswer.objects.filter(u_id=ans_id, user_id=user_id, qt_id=qt_id).first()
         if not obj:
             return Response({"detail": "参数错误！"}, status=400)
         answer = obj.answer
@@ -222,8 +279,12 @@ class ResultView(CreateAPIView):
         data = request.data
         qt_id = data.get('u_id','')
         ans_id = data.get('ans_id', '')
+        tmp = data.get('tmp', '')
         token = request.META.get('HTTP_AUTHORIZATION')
         user_id = get_user_id(token)
+        if tmp == "tmp":
+            res = get_user_tmp_answer_result(data, user_id)
+            return Response(res)
         qt = QuestionType.objects.filter(u_id=qt_id).first()
         if not qt:
             title = ''
