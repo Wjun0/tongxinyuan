@@ -56,7 +56,7 @@ class GetPhoneAPIView(CreateAPIView, ListAPIView):
         user = User.objects.filter(user_id=user_id).first()
         if not user:
             return Response({'detail': "用户不存在！"}, status=400)
-        return Response({"detail": "success", "phone": user.mobile})
+        return Response({"detail": "success", "data": {"phone": user.mobile}})
 
 
     def post(self, request, *args, **kwargs):
@@ -240,6 +240,30 @@ class QuestionView(CreateAPIView):
             obj = Question.objects.filter(u_id=q_id, qt_id=qt_id).first()
         if not obj:
             return Response({"detail": "回答问题不存在！"}, status=400)
+        if obj.q_check_role == "性别校验":
+            sex = obj.sex
+            if tmp == "tmp":
+                op = Option_tmp.objects.filter(q_id=q_id, o_number=o_number).first()
+            else:
+                op = Option.objects.filter(q_id=q_id, o_number=o_number).first()
+            if sex != op.o_content:
+                return Response({"detail": "答题结果不符合要求！"}, status=400)
+        if obj.q_check_role == "年龄校验":
+            min_age = obj.min_age
+            max_age = obj.max_age
+            if tmp == "tmp":
+                op = Option_tmp.objects.filter(q_id=q_id, o_number=o_number).first()
+            else:
+                op = Option.objects.filter(q_id=q_id, o_number=o_number).first()
+            o_content = op.o_content
+            user_min = o_content.split('-')[0]
+            user_max = o_content.split('-')[1]
+            if "不限" in user_max:
+                user_max = 1000
+            if "以上" in max_age:
+                max_age = 1000
+            if int(user_min) < int(min_age) or int(user_max) > int(max_age):
+                return Response({"detail": "答题结果不符合要求！"}, status=400)
         if obj.q_type == "单选题":
             # if o_number not in ["A", 'B', 'C', 'D', 'E', 'F']:
             if o_number not in [chr(i) for i in range(65, 85)]:

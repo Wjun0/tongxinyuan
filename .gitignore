@@ -8,6 +8,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+cert/
+apiclient_key.pem
 build/
 develop-eggs/
 dist/

@@ -130,6 +130,7 @@ def generate_result(qt_id, ans_id):
     if ans_obj.result: # 已经生成结果直接返回
         return
     answer = ans_obj.answer
+    qt = QuestionType.objects.filter(u_id=qt_id).first()
     try:
         ans_data, count_result_list = generate_user_answer_data(answer)
         ans_obj.count_result = {"option_data": count_result_list, "ans_data": ans_data}
@@ -181,11 +182,15 @@ def generate_result(qt_id, ans_id):
                     dim_id_list.append(i.u_id)
         # 将结果保存到 UserAnswer result
         r_u_id = ''
-        qt_id = ''
         background_img = ''
         statement = ''
         result_img = ''
         dim_list = []
+        if not dim_id_list:
+            # 一个维度都没有匹配上手动异常，获取默认结果
+            logger = logging.getLogger("log")
+            logger.error('=====没有匹配的结果======')
+            raise Exception
         for u_id in dim_id_list:
             d = Dimension.objects.filter(u_id=u_id).first()
             if d:
@@ -206,7 +211,7 @@ def generate_result(qt_id, ans_id):
         if result_img:
             result_img = settings.DOMAIN + "/media/image/" + result_img
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
-               "result_img": result_img, "dim_list": dim_list}
+               "result_img": result_img, "dim_list": dim_list, "title_img": qt.title_img}
     except Exception as e: # 异常就取第一个结果
         logger = logging.getLogger("log")
         logger.error('=====获取结果异常======')
@@ -223,7 +228,6 @@ def generate_result(qt_id, ans_id):
                     "result_desc_html": d.result_desc_html, "value": d.value}
         dim_list.append(dim_data)
         obj = Result_Title.objects.filter(u_id=d.r_id).first()
-        qt_id = ''
         if obj:
             r_u_id = obj.u_id
             qt_id = obj.qt_id
@@ -235,7 +239,7 @@ def generate_result(qt_id, ans_id):
         if result_img:
             result_img = settings.DOMAIN + "/media/image/" + result_img
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
-               "result_img": result_img, "dim_list": dim_list}
+               "result_img": result_img, "dim_list": dim_list, "title_img": qt.title_img}
 
     ans_obj.result = res
     ans_obj.save()
@@ -248,6 +252,7 @@ def generate_tmp_result(qt_id, ans_id):
     if ans_obj.result: # 已经生成结果直接返回
         return
     answer = ans_obj.answer
+    qt = QuestionType.objects.filter(u_id=qt_id).first()
     try:
         ans_data = generate_user_answer_tmp_data(answer)
         tmp_dim_list = []  # 用户维度去重
@@ -303,6 +308,11 @@ def generate_tmp_result(qt_id, ans_id):
         statement = ''
         result_img = ''
         dim_list = []
+        if not dim_id_list:
+            # 一个维度都没有匹配上手动异常，获取默认结果
+            logger = logging.getLogger("log")
+            logger.error('=====没有匹配的结果======')
+            raise Exception
         for u_id in dim_id_list:
             d = Dimension_tmp.objects.filter(u_id=u_id).first()
             if d:
@@ -323,7 +333,7 @@ def generate_tmp_result(qt_id, ans_id):
         if result_img:
             result_img = settings.DOMAIN + "/media/image/" + result_img
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
-               "result_img": result_img, "dim_list": dim_list}
+               "result_img": result_img, "dim_list": dim_list, "title_img": qt.title_img}
     except Exception as e: # 异常就取第一个结果
         logger = logging.getLogger("log")
         logger.error('=====获取结果异常======')
@@ -352,7 +362,7 @@ def generate_tmp_result(qt_id, ans_id):
         if result_img:
             result_img = settings.DOMAIN + "/media/image/" + result_img
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
-               "result_img": result_img, "dim_list": dim_list}
+               "result_img": result_img, "dim_list": dim_list, "title_img": qt.title_img}
 
     ans_obj.result = res
     ans_obj.save()
