@@ -1,6 +1,6 @@
 from django.urls import path, re_path
 
-from apps.wechats import views
+from apps.wechats import views, views_pay
 
 urlpatterns = [
     re_path(r'^login/$', views.LoginAPIView.as_view()),     # 登录
@@ -11,6 +11,8 @@ urlpatterns = [
     re_path(r'^answer/$', views.QuestionView.as_view()),       # 回答问题
     re_path(r'^result/$', views.ResultView.as_view()),         # 获取结果
 
+    re_path(r'^pay/jsapi/$', views_pay.PayJsApiView.as_view()),     # 生成订单
+    re_path(r'^notify/$', views_pay.NotifyView.as_view()),          # 回调函数
 
 
 

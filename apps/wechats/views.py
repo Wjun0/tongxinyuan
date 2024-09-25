@@ -39,6 +39,7 @@ class LoginAPIView(CreateAPIView):
             user_info = {"user_id": openid, "iat": time.time()}
             access_token = generate_jwt(user_info, 24)
             refresh_token = generate_jwt(user_info, 24)
+            print(f"token={access_token}")
             d = {"role": 100, "token": access_token, "status": "used", "token_exp": datetime.now()}
             User.objects.update_or_create(user_id=openid, defaults=d)
             return Response({"detail": "success", "data":{"access_token": access_token, "refresh_token": refresh_token}})
@@ -247,7 +248,7 @@ class QuestionView(CreateAPIView):
             else:
                 op = Option.objects.filter(q_id=q_id, o_number=o_number).first()
             if sex != op.o_content:
-                return Response({"detail": "答题结果不符合要求！"}, status=400)
+                return Response({"detail": "fail", "data": {"message": "答题结果不符合性别要求！"}})
         if obj.q_check_role == "年龄校验":
             min_age = obj.min_age
             max_age = obj.max_age
@@ -263,7 +264,7 @@ class QuestionView(CreateAPIView):
             if "以上" in max_age:
                 max_age = 1000
             if int(user_min) < int(min_age) or int(user_max) > int(max_age):
-                return Response({"detail": "答题结果不符合要求！"}, status=400)
+                return Response({"detail": "fail", "data": {"message": "答题结果不符合年龄要求！"}})
         if obj.q_type == "单选题":
             # if o_number not in ["A", 'B', 'C', 'D', 'E', 'F']:
             if o_number not in [chr(i) for i in range(65, 85)]:

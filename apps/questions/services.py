@@ -23,6 +23,15 @@ def add_question_type(request):
     source = data.get('source')
     start_time = data.get('start_time')
     end_time = data.get('end_time')
+    amount = data.get('amount')
+    pay_type = data.get('pay_type')
+    if pay_type not in ['免费', '付费']:
+        raise Exception_('问卷付费类型设置不正确！')
+    if pay_type == "付费":
+        try:
+            amount = f'{float(amount):.2f}'
+        except Exception as e:
+            raise Exception_('问卷价格设置不正确！')
     # if not check_start_end_time(start_time, end_time):
     #     raise Exception_("时间格式错误！")
     if background_img:
@@ -235,7 +244,7 @@ def show_result(request):
     if qt:
         step1 = {"qt_id": qt.u_id, "start_time": qt.start_time, "end_time": qt.end_time, "background_img": qt.background_img, 'title_img': qt.title_img,
              "title":qt.title, "test_value": qt.test_value, "q_number": qt.q_number, "test_time": qt.test_time,
-             "use_count": qt.use_count, "source": qt.source}
+             "use_count": qt.use_count, "source": qt.source, "pay_type": qt.pay_type, "amount": qt.amount}
         result["step1"] = step1
         ques = Question_tmp.objects.filter(qt_id=qt_id)
         questions = []
@@ -295,7 +304,8 @@ def copy_tmp_table(qt_id):
                         'title':q.title, 'test_value':q.test_value, 'test_value_html':q.test_value_html,
                         'q_number':q.q_number, 'test_time':q.test_time, 'use_count':q.use_count, 'source':q.source,
                         'status': q.status, 'status_tmp': q.status_tmp, 'show_number':q.show_number, 'finish_number': q.finish_number,
-                        'update_user': q.update_user, 'create_user':q.create_user, 'check_user':q.check_user, 'check_time':q.check_time,
+                        'update_user': q.update_user, 'create_user':q.create_user, 'check_user':q.check_user,
+                        "amount": q.amount, "pay_type": q.pay_type, 'check_time':q.check_time,
                         'start_time':q.start_time, 'end_time':q.end_time, 'create_time': q.create_time, 'update_time': q.update_time})
     qq = Question_tmp.objects.filter(qt_id=qt_id)
     q_uid_list = []
@@ -426,7 +436,7 @@ def copy_question(qt_id, user):
             test_value=q.test_value, test_value_html=q.test_value_html, q_number=q.q_number,
             test_time=q.test_time, use_count=q.use_count, source=q.source, status="草稿", status_tmp="草稿",
             show_number=0, finish_number=0, update_user=user, create_user=user, check_user='',
-            start_time=q.start_time, end_time=q.end_time)
+            amount=q.amount, pay_type=q.pay_type, start_time=q.start_time, end_time=q.end_time)
         ques = Question_tmp.objects.filter(qt_id=qt_id)
         old_new_dic = {}
         for i in ques:

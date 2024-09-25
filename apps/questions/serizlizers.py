@@ -19,7 +19,8 @@ class QuestionTypeTMPSerializers(serializers.ModelSerializer):
     class Meta:
         model = QuestionType_tmp
         fields = ['u_id', 'start_time', 'end_time', 'background_img', 'title_img', 'title', 'test_value',
-                  'test_value_html' ,'q_number', 'test_time', 'use_count', 'source', 'status']
+                  'test_value_html' ,'q_number', 'test_time', 'use_count', 'source', 'status', 'amount',
+                  'pay_type']
 
 class QuestionTMPSerializers(serializers.ModelSerializer):
     q_options = serializers.SerializerMethodField(method_name="get_q_options")

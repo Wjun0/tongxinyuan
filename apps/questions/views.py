@@ -51,6 +51,10 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
         u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
         data = request.data
         u_id = data.get('qt_id', '')
+        pay_type = data.get('pay_type', '')
+        amount = data.get('amount', '')
+        if pay_type == "付费":
+            amount = f'{float(amount):.2f}'
         qt = QuestionType_tmp.objects.filter(u_id=u_id).first()
         if qt:
             if qt.status not in ["草稿", "审批拒绝", "已上线", "已上线（有草稿）", "已上线（草稿审核拒绝）", "已下线"]:
@@ -65,6 +69,7 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
                 status_tmp = "草稿"
             data['status_tmp'] = status_tmp
             data['update_user'] = u_name
+            data['amount'] = amount
             QuestionType_tmp.objects.update_or_create(u_id=u_id, defaults=data)
             return Response({"detail": "success", 'result': {'title': data.get('title')}})
         # else: # 新增逻辑
