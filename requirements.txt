@@ -34,4 +34,5 @@ tzlocal==5.2
 uritemplate==4.1.1
 urllib3==2.2.1
 webencodings==0.5.1
+wechatpayv3==1.2.52
 xmltodict==0.13.0
