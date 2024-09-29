@@ -186,6 +186,7 @@ def generate_result(qt_id, ans_id):
         statement = ''
         result_img = ''
         dim_list = []
+        title_img = ''
         if not dim_id_list:
             # 一个维度都没有匹配上手动异常，获取默认结果
             logger = logging.getLogger("log")
@@ -210,8 +211,10 @@ def generate_result(qt_id, ans_id):
             background_img = settings.DOMAIN + "/media/image/" + background_img
         if result_img:
             result_img = settings.DOMAIN + "/media/image/" + result_img
+        if qt.title_img:
+            title_img = settings.DOMAIN + "/media/image/" + qt.title_img
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
-               "result_img": result_img, "dim_list": dim_list, "title_img": qt.title_img}
+               "result_img": result_img, "dim_list": dim_list, "title_img": title_img}
     except Exception as e: # 异常就取第一个结果
         logger = logging.getLogger("log")
         logger.error('=====获取结果异常======')
@@ -222,28 +225,13 @@ def generate_result(qt_id, ans_id):
         result_img = ''
         dim_list = []
         title_img = ''
-        d = Dimension.objects.filter(qt_id=qt_id).order_by('-id').first()
-        dim_data = {"dimension_number": d.dimension_number, "dimension_name": d.dimension_name,
-                    "result_number": d.result_number, "result_name": d.result_name,
-                    "result_name_html": d.result_name_html, "result_desc": d.result_desc,
-                    "result_desc_html": d.result_desc_html, "value": d.value}
+        dim_data = {"dimension_number": "", "dimension_name": "",
+                    "result_number": "", "result_name": "",
+                    "result_name_html": "", "result_desc": "暂未获取到结果，请重新测试",
+                    "result_desc_html": '[{"type": "string", "value”: "暂未获取到结果，请重新测试"}]', "value": ""}
         dim_list.append(dim_data)
-        obj = Result_Title.objects.filter(u_id=d.r_id).first()
-        if obj:
-            r_u_id = obj.u_id
-            qt_id = obj.qt_id
-            background_img = obj.background_img
-            statement = obj.statement
-            result_img = obj.result_img
-        if background_img:
-            background_img = settings.DOMAIN + "/media/image/" + background_img
-        if result_img:
-            result_img = settings.DOMAIN + "/media/image/" + result_img
-        if qt.title_img:
-            title_img = settings.DOMAIN + "/media/image/" + qt.title_img
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
                "result_img": result_img, "dim_list": dim_list, "title_img": title_img}
-
     ans_obj.result = res
     ans_obj.save()
     return
@@ -349,27 +337,14 @@ def generate_tmp_result(qt_id, ans_id):
         statement = ''
         result_img = ''
         dim_list = []
-        d = Dimension_tmp.objects.filter(qt_id=qt_id).order_by('-id').first()
-        dim_data = {"dimension_number": d.dimension_number, "dimension_name": d.dimension_name,
-                    "result_number": d.result_number, "result_name": d.result_name,
-                    "result_name_html": d.result_name_html, "result_desc": d.result_desc,
-                    "result_desc_html": d.result_desc_html, "value": d.value}
+        title_img = ''
+        dim_data = {"dimension_number": "", "dimension_name": "",
+                    "result_number": "", "result_name": "",
+                    "result_name_html": "", "result_desc": "暂未获取到结果，请重新测试",
+                    "result_desc_html": '[{"type": "string", "value”: "暂未获取到结果，请重新测试"}]', "value": ""}
         dim_list.append(dim_data)
-        obj = Result_Title_tmp.objects.filter(u_id=d.r_id).first()
-        qt_id = ''
-        if obj:
-            r_u_id = obj.u_id
-            qt_id = obj.qt_id
-            background_img = obj.background_img
-            statement = obj.statement
-            result_img = obj.result_img
-        if background_img:
-            background_img = settings.DOMAIN + "/media/image/" + background_img
-        if result_img:
-            result_img = settings.DOMAIN + "/media/image/" + result_img
-        res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
-               "result_img": result_img, "dim_list": dim_list, "title_img": qt.title_img}
-
+        res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img": background_img, "statement": statement,
+               "result_img": result_img, "dim_list": dim_list, "title_img": title_img}
     ans_obj.result = res
     ans_obj.save()
     return

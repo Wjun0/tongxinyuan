@@ -13,7 +13,7 @@ urlpatterns = [
 
     re_path(r'^pay/jsapi/$', views_pay.PayJsApiView.as_view()),     # 生成订单
     re_path(r'^notify/$', views_pay.NotifyView.as_view()),          # 回调函数
-
+    re_path(r'^pay/query/$', views_pay.PayQueryView.as_view())       # 查询订单状态
 
 
 

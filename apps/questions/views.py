@@ -55,6 +55,8 @@ class ADDQuestionsTypeView(CreateAPIView, ListAPIView):
         amount = data.get('amount', '')
         if pay_type == "付费":
             amount = f'{float(amount):.2f}'
+        else:
+            amount = 0
         qt = QuestionType_tmp.objects.filter(u_id=u_id).first()
         if qt:
             if qt.status not in ["草稿", "审批拒绝", "已上线", "已上线（有草稿）", "已上线（草稿审核拒绝）", "已下线"]:

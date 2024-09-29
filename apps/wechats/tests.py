@@ -6,8 +6,7 @@ domain = "https://api.uat.tong-psy.com"
 #     "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvTEZDcTVWa2s0YjlWMjJDS1pWWEl5ZlZ5b1FBIiwiaWF0IjoxNzI0NTEzMTgzLjQyMzg1NTV9fQ.aBZWeBhqn4tp29nkIkNECD1wwc5tMicmksy3vZPd9hI"
 # }
 headers = {
-    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdlZGZRcUdzYVBsemZhbEhXWTdGcUZvIiwiaWF0IjoxNzI3MTAxOTM4LjkxMTU0ODZ9fQ.nYUQpfr3dZTTltzBsHKOwnDEMVMP8eeM2cgvE8um4hI"
-}
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdlZGZRcUdzYVBsemZhbEhXWTdGcUZvIiwiaWF0IjoxNzI3NTM1ODA5LjAyNDY3NDR9fQ.px0bvtPb4TiK_sU7KBeYtO7px3us7tX-8R8c7H_ZpeY"}
 
 def _get_question(data):
     url = f"{domain}/wechat/v1/get_question/"
@@ -81,6 +80,6 @@ def test_answer(qt_id):
 
 
 if __name__ == '__main__':
-    test_answer('60057b36-49ca-4408-bfdf-0841517fd6b1')
+    test_answer('22cc0a79-ff70-4839-8c0a-9904fd0bc4b8')
     # test_answer('f885407b-db0b-475e-a026-38ebe7c7c0c2')
     # test_answer('55642b1e-1b29-487a-aafd-557ffdf3d088')
