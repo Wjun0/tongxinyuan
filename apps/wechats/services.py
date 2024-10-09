@@ -8,7 +8,7 @@ from apps.questions.models import Dimension, Question, Option, Calculate_Exp, Re
     QuestionType_tmp, Option_tmp, Question_tmp, Dimension_tmp, Calculate_Exp_tmp, Result_Title_tmp
 from apps.users.exceptions import Exception_
 from apps.users.utils import get_user_id
-from apps.wechats.models import UserAnswer, UserShow_number, UserAnswer_tmp
+from apps.wechats.models import UserAnswer, UserShow_number, UserAnswer_tmp, Order, Order_tmp
 
 format_dic = {"大于": ">", "大于或等于": ">=",
               "小于": "<", "小于或等于": "<=",
@@ -228,7 +228,7 @@ def generate_result(qt_id, ans_id):
         dim_data = {"dimension_number": "", "dimension_name": "",
                     "result_number": "", "result_name": "",
                     "result_name_html": "", "result_desc": "暂未获取到结果，请重新测试",
-                    "result_desc_html": '[{"type": "string", "value”: "暂未获取到结果，请重新测试"}]', "value": ""}
+                    "result_desc_html": '[{\"type\": \"string\", \"value\": \"暂未获取到结果，请重新测试\"}]', "value": ""}
         dim_list.append(dim_data)
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
                "result_img": result_img, "dim_list": dim_list, "title_img": title_img}
@@ -341,7 +341,7 @@ def generate_tmp_result(qt_id, ans_id):
         dim_data = {"dimension_number": "", "dimension_name": "",
                     "result_number": "", "result_name": "",
                     "result_name_html": "", "result_desc": "暂未获取到结果，请重新测试",
-                    "result_desc_html": '[{"type": "string", "value”: "暂未获取到结果，请重新测试"}]', "value": ""}
+                    "result_desc_html": '[{\"type\": \"string\", \"value\": \"暂未获取到结果，请重新测试\"}]', "value": ""}
         dim_list.append(dim_data)
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img": background_img, "statement": statement,
                "result_img": result_img, "dim_list": dim_list, "title_img": title_img}
@@ -412,4 +412,16 @@ def check_user_answer(request, qt_id):   # 判断用户是否回答过
         if obj.result:
             return True
         return False
+    return False
+
+
+def user_is_payed(user_id, qt_id, tmp):
+    # 用户是否已支付问卷
+    if tmp == "tmp":
+        obj = Order_tmp.objects.filter(user_id=user_id, qt_id=qt_id).last()
+    else:
+        obj = Order.objects.filter(user_id=user_id, qt_id=qt_id).last()
+    if obj:
+        if obj.pay_status == "已支付":
+            return True
     return False

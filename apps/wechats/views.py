@@ -18,7 +18,7 @@ from apps.users.permission import WexinPermission
 from apps.users.utils import get_user_id
 from apps.wechats.models import UserAnswer, UserAnswer_tmp
 from apps.wechats.serizlizers import QuestionTypeListSerializers
-from apps.wechats.services import generate_result, count_finish_number, count_show_number, check_user_answer
+from apps.wechats.services import generate_result, count_finish_number, count_show_number, check_user_answer, user_is_payed
 from apps.wechats.tmp_service import get_tmp_result, get_user_tmp_answer_result
 from utils.generate_jwt import generate_jwt
 
@@ -95,8 +95,10 @@ class DetailView(ListAPIView):
         data = request.query_params
         qt_id = data.get("u_id")
         tmp = data.get("tmp")
+        user_id = get_user_id(request.META.get('HTTP_AUTHORIZATION'))
+        is_payed = user_is_payed(user_id, qt_id, tmp)
         if tmp == "tmp":  # 获取临时问卷，测试答题
-            result = get_tmp_result(qt_id)
+            result = get_tmp_result(qt_id, is_payed)
             return Response({"detail": "success", "data": result, "user_is_answer": False})
         qt = self.get_queryset().filter(u_id=qt_id).first()
         if not qt:
@@ -114,7 +116,8 @@ class DetailView(ListAPIView):
             title_img = settings.DOMAIN + "/media/image/" + title_img
         result = {"qt_id": qt.u_id, "background_img": background_img, 'title_img': title_img,
                   "title": qt.title, "test_value": qt.test_value, "test_value_html": qt.test_value_html,
-                  'q_number': qt.q_number, "test_time": qt.test_time, "use_count": qt.use_count, 'source':qt.source}
+                  'q_number': qt.q_number, "test_time": qt.test_time, "use_count": qt.use_count, 'source':qt.source,
+                  'pay_type': qt.pay_type, 'amount': qt.amount, 'is_payed': is_payed}
         count_show_number(request, qt_id)
         user_is_answer = check_user_answer(request, qt_id)
         return Response({"detail": "success", "data": result, "user_is_answer": user_is_answer})

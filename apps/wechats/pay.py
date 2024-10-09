@@ -95,6 +95,9 @@ def pay_jsapi(user_id, title, amount):
         }}
         return res, out_trade_no
     else:
+        import logging
+        log = logging.getLogger('log')
+        log.error(f"调用pay_jsapi失败 \r {str(result)}")
         res = {'detail': "fail", 'data': {'reason': result.get('code')}}
         return res, out_trade_no
 
@@ -106,3 +109,5 @@ def query(out_trade_no):
     code, message = wxpay.query(out_trade_no=out_trade_no)
     return code, message
 
+
+# pay_jsapi('odYcp7YjGeuCyKxxQmklc2dkD3-4', 'test', 0.01)

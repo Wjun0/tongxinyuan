@@ -210,7 +210,7 @@ LOGGING = {
         'default': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(log_path, 'all-{}.log'.format(time.strftime('%Y-%m-%d'))),
+            'filename': os.path.join(log_path, 'all.log'),
             'maxBytes': 1024 * 1024 * 5,  # 文件大小
             'backupCount': 5,  # 备份数
             'formatter': 'standard',  # 输出格式
@@ -220,7 +220,7 @@ LOGGING = {
         'error': {
             'level': 'ERROR',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(log_path, 'error-{}.log'.format(time.strftime('%Y-%m-%d'))),
+            'filename': os.path.join(log_path, 'error.log'),
             'maxBytes': 1024 * 1024 * 5,  # 文件大小
             'backupCount': 5,  # 备份数
             'formatter': 'standard',  # 输出格式
@@ -236,7 +236,7 @@ LOGGING = {
         'info': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(log_path, 'info-{}.log'.format(time.strftime('%Y-%m-%d'))),
+            'filename': os.path.join(log_path, 'info.log'),
             'maxBytes': 1024 * 1024 * 5,
             'backupCount': 5,
             'formatter': 'standard',

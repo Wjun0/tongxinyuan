@@ -6,7 +6,7 @@ from apps.wechats.models import UserAnswer_tmp
 from apps.wechats.services import generate_tmp_result
 
 
-def get_tmp_result(qt_id):
+def get_tmp_result(qt_id, is_payed):
     qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
     if not qt:
         raise Exception_("问卷不存在！")
@@ -18,7 +18,8 @@ def get_tmp_result(qt_id):
         title_img = settings.DOMAIN + "/media/image/" + title_img
     result = {"qt_id": qt.u_id, "background_img": background_img, 'title_img': title_img,
               "title": qt.title, "test_value": qt.test_value, "test_value_html": qt.test_value_html,
-              'q_number': qt.q_number, "test_time": qt.test_time, "use_count": qt.use_count, 'source': qt.source}
+              'q_number': qt.q_number, "test_time": qt.test_time, "use_count": qt.use_count, 'source': qt.source,
+              'pay_type': qt.pay_type, 'amount': qt.amount, 'is_payed': is_payed}
     return result
 
 def get_user_tmp_answer_result(data, user_id):

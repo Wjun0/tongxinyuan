@@ -67,9 +67,9 @@ class PayQueryView(CreateAPIView):
         qt_id = request.data.get('u_id', '')
         tmp = request.data.get('tmp', '')
         if tmp == "tmp":
-            obj = Order_tmp.objects.filter(user_id=user_id, qt_id=qt_id, pay_status="待支付").first()
+            obj = Order_tmp.objects.filter(user_id=user_id, qt_id=qt_id, pay_status="待支付").last()
         else:
-            obj = Order.objects.filter(user_id=user_id, qt_id=qt_id, pay_status="待支付").first()
+            obj = Order.objects.filter(user_id=user_id, qt_id=qt_id, pay_status="待支付").last()
         if not obj:
             return Response({"detail": "fail", "data": {"reson": "未找到支付订单！"}})
         code, message = query(obj.u_id)

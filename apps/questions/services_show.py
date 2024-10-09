@@ -7,7 +7,7 @@ def get_show_question(qt_id):
     qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
     if qt:
         step1 = {"qt_id": qt.u_id, "start_time": qt.start_time, "end_time": qt.end_time, "background_img": qt.background_img, 'title_img': qt.title_img,
-             "title":qt.title, "test_value": qt.test_value, "q_number": qt.q_number, "test_time": qt.test_time,
+             "title":qt.title, "test_value": qt.test_value, "q_number": qt.q_number, "test_time": qt.test_time, "pay_type":qt.pay_type, 'amount':qt.amount,
              "use_count": qt.use_count, "source": qt.source}
         result_tmp["step1"] = step1
         ques = Question_tmp.objects.filter(qt_id=qt_id)
@@ -27,7 +27,7 @@ def get_show_question(qt_id):
                                   "next_q_id": j.next_q_id})
             questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, 'q_attr':i.q_attr, 'q_value_type':i.q_value_type,
                               "q_title": i.q_title, "q_title_html":i.q_title_html ,"number": i.number, "q_check_role": i.q_check_role,
-                              "min_age":i.min_age,"max_age": i.max_age,"sex":i.sex, "q_options": options})
+                              "min_age":i.min_age,"max_age": i.max_age, "sex":i.sex, "q_options": options})
         result_tmp["step2"] = questions
         exp_list = []
         exps = Calculate_Exp_tmp.objects.filter(qt_id=qt_id)
