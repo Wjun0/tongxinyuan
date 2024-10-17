@@ -418,10 +418,9 @@ def check_user_answer(request, qt_id):   # 判断用户是否回答过
 def user_is_payed(user_id, qt_id, tmp):
     # 用户是否已支付问卷
     if tmp == "tmp":
-        obj = Order_tmp.objects.filter(user_id=user_id, qt_id=qt_id).last()
+        obj = Order_tmp.objects.filter(user_id=user_id, qt_id=qt_id, pay_status="已支付").last()
     else:
-        obj = Order.objects.filter(user_id=user_id, qt_id=qt_id).last()
+        obj = Order.objects.filter(user_id=user_id, qt_id=qt_id, pay_status="已支付").last()
     if obj:
-        if obj.pay_status == "已支付":
-            return True
+        return True
     return False
