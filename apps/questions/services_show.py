@@ -127,7 +127,10 @@ def get_show_question(qt_id):
 
 
 def get_used_question(keyword):
-    ques = QuestionType.objects.filter(status="已上线").filter(title__icontains=keyword)
+    if keyword:
+        ques = QuestionType.objects.filter(status="已上线").filter(title__icontains=keyword)
+    else:
+        ques = QuestionType.objects.filter(status="已上线")
     data = []
     for i in ques:
         item = {}
