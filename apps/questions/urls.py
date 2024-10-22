@@ -1,6 +1,6 @@
 
 from django.urls import path, re_path
-from apps.questions import views
+from apps.questions import views, channel_views
 
 urlpatterns = [
     re_path(r'^add_question_type/$', views.ADDQuestionsTypeView.as_view()), # 添加问题类型（第一步）
@@ -26,6 +26,11 @@ urlpatterns = [
     re_path(r'^index/$', views.IndexView.as_view()),            # 问卷列表页
     re_path(r'^show/$', views.ShowquestionAPIView.as_view()),   # 查看问卷
 
+    # 频道
+    re_path(r'^channel/$', channel_views.ChannelView.as_view()), # 频道列表页
+    re_path(r'^add_channel/$', channel_views.ChannelADDView.as_view()), # post新增编辑 / get查看
+    re_path(r'^submit_channel/$', channel_views.ChannelSubmitView.as_view()), # 保存提交审核
+    re_path(r'^check_channel/$', channel_views.ChannelCheckView.as_view()), # 审核
 
     # 审批接口
     re_path(r'^check_index/$', views.CheckIndexView.as_view()),  # 审批列表页

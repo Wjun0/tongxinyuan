@@ -38,3 +38,8 @@ class QuestionTMPSerializers(serializers.ModelSerializer):
                     'o_html_content': i.o_html_content, 'next_q_id': i.next_q_id, 'value':i.value}
             ops.append(data)
         return ops
+
+class Channel_tmpListSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionType_tmp
+        fields = ['u_id', 'main_title', 'type', 'update_user', 'create_user', 'check_user', 'create_time', 'update_time']

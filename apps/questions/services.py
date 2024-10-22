@@ -7,7 +7,8 @@ from django.db.models import Q
 from apps.questions.check_data_service import check_start_end_time, check_img, check_add_question, check_add_calculate, \
     check_add_result
 from apps.questions.models import Question, Option, Calculate_Exp, Question_tmp, Option_tmp, Calculate_Exp_tmp, \
-    Result_Title, Result_Title_tmp, Dimension, Dimension_tmp, QuestionType_tmp, QuestionType
+    Result_Title, Result_Title_tmp, Dimension, Dimension_tmp, QuestionType_tmp, QuestionType, Channel_tmp, Channel, \
+    ChannelData_tmp, ChannelData
 from apps.users.exceptions import Exception_
 
 
@@ -517,3 +518,39 @@ def copy_question(qt_id, user):
     return None
 
 
+def copy_channel_tmp_table(type):
+    c = Channel_tmp.objects.filter(type=type).first()
+    if c:
+        data = {}
+        data['u_id'] = c.u_id
+        data['main_title'] = c.main_title
+        data['type'] = c.type
+        data['update_user'] = c.update_user
+        data['create_user'] = c.create_user
+        data['check_user'] = c.check_user
+        data['status'] = c.status
+        data['create_time'] = c.create_time
+        data['update_time'] = c.update_time
+        Channel.objects.update_or_create(type=type, defaults=data)
+        cds = ChannelData_tmp.objects.filter(type=type)
+        index_list = []
+        for i in cds:
+            item = {}
+            item['u_id'] = i.u_id
+            item['index'] = i.index
+            item['qt_id'] = i.qt_id
+            item['source'] = i.source
+            item['title'] = i.title
+            item['img'] = i.img
+            item['url'] = i.url
+            item['type'] = i.type
+            item['desc'] = i.desc
+            item['amount'] = i.amount
+            item['pay_type'] = i.pay_type
+            item['create_time'] = i.create_time
+            item['update_time'] = i.update_time
+            item['status'] = i.status
+            index_list.append(i.index)
+            ChannelData.objects.update_or_create(type=type, index=i.index, defaults=item)
+        ChannelData.objects.filter(type=type).filter(~Q(index__in=index_list)).delete()
+    return

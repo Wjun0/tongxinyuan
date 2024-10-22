@@ -255,7 +255,85 @@ class Image(models.Model):
         db_table = "tong_image"
 
 
+class Channel(models.Model):
+    id = models.AutoField(primary_key=True)
+    u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
+    main_title = models.CharField(max_length=128, default='', verbose_name="主标题")
+    type = models.CharField(max_length=128, default='', verbose_name="类型")
+    update_user = models.CharField(max_length=32, default='', verbose_name="最近更新人")
+    create_user = models.CharField(max_length=32, default='', verbose_name="创建人")
+    check_user = models.CharField(max_length=32, default='', verbose_name="审核人")
+    status = models.CharField(max_length=32, default='', verbose_name="状态 已上线|已暂停")
 
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
+
+    class Meta:
+        db_table = "tong_channel"
+
+
+class Channel_tmp(models.Model):
+    id = models.AutoField(primary_key=True)
+    u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
+    main_title = models.CharField(max_length=128, default='', verbose_name="主标题")
+    type = models.CharField(max_length=128, default='', verbose_name="类型")
+    update_user = models.CharField(max_length=32, default='', verbose_name="最近更新人")
+    create_user = models.CharField(max_length=32, default='', verbose_name="创建人")
+    check_user = models.CharField(max_length=32, default='', verbose_name="审核人")
+    status = models.CharField(max_length=32, default='', verbose_name="状态 已上线|已暂停")
+
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
+
+    class Meta:
+        db_table = "tong_channel_tmp"
+
+
+class ChannelData(models.Model):
+    id = models.AutoField(primary_key=True)
+    u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
+    index = models.CharField(max_length=128, default='', verbose_name="排序id")
+    qt_id = models.CharField(max_length=128, default='', verbose_name="问卷类型id")
+    source = models.CharField(max_length=128, default='', verbose_name="source")
+    title = models.CharField(max_length=128, default='', verbose_name="标题")
+    img = models.CharField(max_length=128, default='', verbose_name="图片")
+    url = models.CharField(max_length=128, default='', verbose_name="url")
+    type = models.CharField(max_length=128, default='', verbose_name="类型")
+    desc = models.CharField(max_length=128, default='', verbose_name="说明")
+    amount = models.CharField(max_length=32, default='', verbose_name="付费金额")
+    pay_type = models.CharField(max_length=32, default='', verbose_name="是否免费")
+
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
+
+    status = models.CharField(max_length=32, default='', verbose_name="状态 已上线|已暂停")
+
+    class Meta:
+        db_table = "tong_channel_data"
+
+
+class ChannelData_tmp(models.Model):
+    id = models.AutoField(primary_key=True)
+    u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
+    index = models.CharField(max_length=128, default='', verbose_name="排序id")
+    qt_id = models.CharField(max_length=128, default='', verbose_name="问卷类型id")
+    source = models.CharField(max_length=128, default='', verbose_name="source")
+    title = models.CharField(max_length=128, default='', verbose_name="标题")
+    img = models.CharField(max_length=128, default='', verbose_name="图片")
+    url = models.CharField(max_length=128, default='', verbose_name="url")
+    type = models.CharField(max_length=128, default='', verbose_name="类型")
+    desc = models.CharField(max_length=128, default='', verbose_name="说明")
+    amount = models.CharField(max_length=32, default='', verbose_name="付费金额")
+    pay_type = models.CharField(max_length=32, default='', verbose_name="是否免费")
+
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    update_time = models.DateTimeField(auto_now=True, null=True, verbose_name='更新时间')
+
+    status = models.CharField(max_length=32, default='', verbose_name="状态")
+
+
+    class Meta:
+        db_table = "tong_channel_data_tmp"
 
 
 
