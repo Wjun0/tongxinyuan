@@ -11,7 +11,8 @@ from rest_framework.generics import ListAPIView, CreateAPIView
 from rest_framework.response import Response
 from weixin import WXAPPAPI
 
-from apps.questions.models import QuestionType, Question, Option, QuestionType_tmp, Question_tmp, Option_tmp
+from apps.questions.models import QuestionType, Question, Option, QuestionType_tmp, Question_tmp, Option_tmp, Channel, \
+    ChannelData
 from apps.users.models import User
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import WexinPermission
@@ -335,3 +336,36 @@ class ResultView(CreateAPIView):
         else:
             result = obj.result
         return Response({"detail": "success", "data": result, 'title': title})
+
+
+class ChannelAPIView(ListAPIView):
+    queryset = Channel.objects.all()
+    permission_classes = (WexinPermission,)
+
+    def list(self, request, *args, **kwargs):
+        type = request.query_params.get('type')
+        data = {}
+        if type:
+            obj = self.get_queryset().filter(type=type, status="已上线").first()
+            if obj:
+                data['main_title'] = obj.main_title
+                data['type'] = obj.type
+                data['status'] = obj.status
+                data['status'] = obj.status
+                channels = []
+                chas = ChannelData.objects.filter(type=type)
+                for i in chas:
+                    item = {}
+                    item['index'] = i.index
+                    item['qt_id'] = i.qt_id
+                    item['source'] = i.source
+                    item['title'] = i.title
+                    item['img'] = i.img
+                    item['url'] = i.url
+                    item['type'] = i.type
+                    item['desc'] = i.desc
+                    item['amount'] = i.amount
+                    item['pay_type'] = i.pay_type
+                    channels.append(item)
+                data['channels'] = channels
+        return Response({"detail": "success", "data": data})

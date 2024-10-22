@@ -16,7 +16,7 @@ from apps.questions.serizlizers import QuestionTypeTMPListSerializers, \
 from apps.questions.services import add_question_type, add_question, add_order_and_select_value, \
     add_calculate, add_result, show_result, get_option_data, get_calculate, copy_tmp_table, get_question_option, \
     copy_use_table, get_add_result, copy_question
-from apps.questions.services_show import get_show_question
+from apps.questions.services_show import get_show_question, get_used_question
 from apps.questions.upload_image_service import upload
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import isManagementPermission, idAdminAndCheckerPermission
@@ -409,4 +409,14 @@ class ShowquestionAPIView(ListAPIView):
     def list(self, request, *args, **kwargs):
         qt_id = request.query_params.get("qt_id")
         result = get_show_question(qt_id)
+        return Response({"detail": "success", "data": result})
+
+
+class UsedquestionAPIView(ListAPIView):
+    queryset = QuestionType.objects.order_by('id')
+    permission_classes = (isManagementPermission,)
+
+    def list(self, request, *args, **kwargs):
+        keyword = request.query_params.get("keyword")
+        result = get_used_question(keyword)
         return Response({"detail": "success", "data": result})

@@ -124,3 +124,15 @@ def get_show_question(qt_id):
         result["step4"] = step4
 
     return {"data_tmp": result_tmp, "data": result}
+
+
+def get_used_question(keyword):
+    ques = QuestionType.objects.filter(status="已上线").filter(title__icontains=keyword)
+    data = []
+    for i in ques:
+        item = {}
+        item['qt_id'] = i.u_id
+        item['title'] = i.title
+        data.append(item)
+    return data
+

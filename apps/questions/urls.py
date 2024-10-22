@@ -25,6 +25,8 @@ urlpatterns = [
     # 全部问卷列表
     re_path(r'^index/$', views.IndexView.as_view()),            # 问卷列表页
     re_path(r'^show/$', views.ShowquestionAPIView.as_view()),   # 查看问卷
+    re_path(r'^used_question/$', views.UsedquestionAPIView.as_view()),   # 查看问卷
+
 
     # 频道
     re_path(r'^channel/$', channel_views.ChannelView.as_view()), # 频道列表页

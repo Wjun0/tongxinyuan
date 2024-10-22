@@ -24,7 +24,7 @@ class ChannelView(CreateAPIView):
         status = data.get('status')
         create_user = data.get('create_user')
         check_user = data.get('check_user')
-        type = data.get('order')
+        type = data.get('type')
         queryset = self.get_queryset()
         if main_title:
             queryset = queryset.filter(main_title=main_title)
