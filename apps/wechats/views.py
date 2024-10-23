@@ -47,7 +47,7 @@ class LoginAPIView(CreateAPIView):
         except Exception as e:
             logger = logging.getLogger("log")
             logger.error(e)
-            return Response({"detail": "无效的code"}, status=400)
+            return Response({"detail": "fail", "data": "无效的code"})
 
 class GetPhoneAPIView(CreateAPIView, ListAPIView):
     permission_classes = (WexinPermission,)
@@ -57,7 +57,7 @@ class GetPhoneAPIView(CreateAPIView, ListAPIView):
         user_id = get_user_id(token)
         user = User.objects.filter(user_id=user_id).first()
         if not user:
-            return Response({'detail': "用户不存在！"}, status=400)
+            return Response({'detail': "fail",'data': "用户不存在！"})
         return Response({"detail": "success", "data": {"phone": user.mobile}})
 
 
@@ -79,7 +79,7 @@ class GetPhoneAPIView(CreateAPIView, ListAPIView):
         except Exception as e:
             logger = logging.getLogger("log")
             logger.error(e)
-            return Response({"detail": "获取手机号失败！"}, status=400)
+            return Response({"detail": "fail", "data": "获取手机号失败！"})
 
 class IndexView(ListAPIView):
     queryset = QuestionType.objects.filter(status="已上线").order_by('-update_time')
@@ -103,7 +103,7 @@ class DetailView(ListAPIView):
             return Response({"detail": "success", "data": result, "user_is_answer": False})
         qt = self.get_queryset().filter(u_id=qt_id).first()
         if not qt:
-            return Response({"detail": "问卷不存在！"}, status=400)
+            return Response({"detail": "fail！", "data": "问卷不存在！"})
         # now = timezone.now()
         # if now < qt.start_time:
         #     return Response({"detail": "问卷即将开放，敬请期待~"}, status=403)
@@ -156,11 +156,17 @@ class GETQuestionView(CreateAPIView):
             qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
         else:
             qt = QuestionType.objects.filter(u_id=qt_id).first()
+        title = ''
         if not qt:
-            title = ''
+            return Response({"detail": "fail", "data": "问卷不存在！"})
         else:
             title = qt.title
-        # 判断题目是否是顺序题
+        if qt.pay_type == "付费":
+            user_id = get_user_id(request.META.get('HTTP_AUTHORIZATION'))
+            is_payed = user_is_payed(user_id, qt_id, tmp)
+            if not is_payed:
+                return Response({"detail": "fail", "data": "问卷未支付！"})
+            # 判断题目是否是顺序题
         if tmp =="tmp":
             q = Question_tmp.objects.filter(qt_id=qt_id).values('u_id')
         else:
@@ -187,7 +193,7 @@ class GETQuestionView(CreateAPIView):
         else:
             l_q = Question.objects.filter(qt_id=qt_id, number=last_number).first()
         if not l_q:
-            Response({"detail": "找不到上一题的数据！"}, status=400)
+            Response({"detail": "fail", "data": "找不到上一题的数据！"})
         if l_q.q_type == "问答题":
             # 没有定义下一题
             number = int(last_number) + 1
@@ -201,7 +207,7 @@ class GETQuestionView(CreateAPIView):
         else:
             obj = Option.objects.filter(q_id=last_q_id, o_number=last_o_number).first()
         if not obj:
-            return Response({"detail": "找不到对应的数据"}, status=400)
+            return Response({"detail": "fail", "data": "题目未找到！"})
         if not obj.next_q_id or obj.next_q_id==0:
             # 没有定义下一题
             number = int(last_number) + 1
@@ -238,13 +244,20 @@ class QuestionView(CreateAPIView):
         ans_id = data.get('ans_id','')
         tmp = data.get('tmp','')
         if not(qt_id and q_id):
-            return Response({"detail": "参数错误！"}, status=400)
+            return Response({"detail": "fail",  "data": "参数错误！"})
         if tmp == "tmp":
             obj = Question_tmp.objects.filter(u_id=q_id, qt_id=qt_id).first()
+            qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
         else:
             obj = Question.objects.filter(u_id=q_id, qt_id=qt_id).first()
-        if not obj:
-            return Response({"detail": "回答问题不存在！"}, status=400)
+            qt = QuestionType.objects.filter(u_id=qt_id).first()
+        if not obj or not qt:
+            return Response({"detail": "fail！", "data": "回答问题不存在！"})
+        if qt.pay_type == "付费":
+            user_id = get_user_id(request.META.get('HTTP_AUTHORIZATION'))
+            is_payed = user_is_payed(user_id, qt_id, tmp)
+            if not is_payed:
+                return Response({"detail": "fail", "data": "问卷未支付！"})
         if obj.q_check_role == "性别校验":
             sex = obj.sex
             if tmp == "tmp":
@@ -272,12 +285,12 @@ class QuestionView(CreateAPIView):
         if obj.q_type == "单选题":
             # if o_number not in ["A", 'B', 'C', 'D', 'E', 'F']:
             if o_number not in [chr(i) for i in range(65, 85)]:
-                return Response({"detail": "不存在该选项！"}, status=400)
+                return Response({"detail": "fail","data": "不存在该选项！"})
         if obj.q_type == "多选题":
             o_number_list = o_number.split(',')
             for i in o_number_list:
                 if i not in [chr(i) for i in range(65, 85)]:
-                    return Response({"detail": "错误的选项！"}, status=400)
+                    return Response({"detail": "fail", "data": "错误的选项！"})
         token = request.META.get('HTTP_AUTHORIZATION')
         user_id = get_user_id(token)
         if not ans_id:
@@ -294,7 +307,7 @@ class QuestionView(CreateAPIView):
         else:
             obj = UserAnswer.objects.filter(u_id=ans_id, user_id=user_id, qt_id=qt_id).first()
         if not obj:
-            return Response({"detail": "参数错误！"}, status=400)
+            return Response({"detail": "fail", "data": "参数错误！"})
         answer = obj.answer
         answer[q_id] = {"o_number": o_number, "text": text}
         obj.answer = answer
