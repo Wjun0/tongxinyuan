@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.questions.models import QuestionType, QuestionType_tmp, Option_tmp, Question_tmp
+from apps.questions.models import QuestionType, QuestionType_tmp, Option_tmp, Question_tmp, Channel_tmp
 from apps.users.models import User
 
 
@@ -41,5 +41,5 @@ class QuestionTMPSerializers(serializers.ModelSerializer):
 
 class Channel_tmpListSerializers(serializers.ModelSerializer):
     class Meta:
-        model = QuestionType_tmp
-        fields = ['u_id', 'main_title', 'type', 'update_user', 'create_user', 'check_user', 'create_time', 'update_time']
+        model = Channel_tmp
+        fields = ['u_id', 'main_title', 'type', 'update_user', 'create_user', 'check_user', 'create_time', 'update_time', 'status']

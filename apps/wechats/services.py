@@ -3,6 +3,7 @@ import re
 
 from django.conf import settings
 from django.db.models import Q
+from django.utils import timezone
 
 from apps.questions.models import Dimension, Question, Option, Calculate_Exp, Result_Title, QuestionType, \
     QuestionType_tmp, Option_tmp, Question_tmp, Dimension_tmp, Calculate_Exp_tmp, Result_Title_tmp
@@ -379,7 +380,7 @@ def count_finish_number(user_id, qt_id, ans_id):
 def count_show_number(request, qt_id):
     token = request.META.get('HTTP_AUTHORIZATION')
     user_id = get_user_id(token)
-    sh = UserShow_number.objects.filter(qt_id=qt_id,user_id=user_id).first()
+    sh = UserShow_number.objects.filter(qt_id=qt_id, user_id=user_id).first()
     if not sh: # 没有浏览过才增加
         q = QuestionType.objects.filter(u_id=qt_id).first()
         if q:
@@ -402,6 +403,9 @@ def count_show_number(request, qt_id):
         #添加完成将记录入库
         UserShow_number.objects.create(qt_id=qt_id, user_id=user_id)
         return
+    else:  # 更新浏览时间
+       sh.update_time = timezone.now()
+       sh.save()
     return
 
 def check_user_answer(request, qt_id):   # 判断用户是否回答过
@@ -424,3 +428,33 @@ def user_is_payed(user_id, qt_id, tmp):
     if obj:
         return True
     return False
+
+def get_user_questions(user_id):
+    result = []
+    finish_dic = {}
+    ans = UserAnswer.objects.filter(user_id=user_id)
+    for a in ans:
+        if a.result:
+            finish_dic[a.qt_id] = {'qt_id': a.qt_id, 'ans_id': a.u_id}
+    sh = UserShow_number.objects.filter(user_id=user_id).order_by('-update_time')
+    for i in sh:
+        qt = QuestionType.objects.filter(u_id=i.qt_id).first()
+        if qt:
+            item = {}
+            item['u_id'] = i.qt_id
+            item['ans_id'] = ""
+            item['title'] = qt.title
+            title_img = ""
+            if qt.title_img:
+                title_img = settings.DOMAIN + "/media/image/" + qt.title_img
+            item['title_img'] = title_img
+            is_finish = False
+            if finish_dic.get(i.qt_id):
+                is_finish = True
+                item['ans_id'] = finish_dic.get(i.qt_id, {}).get('ans_id', '')
+            item['is_finish'] = is_finish
+            item['amount'] = qt.amount
+            item['pay_type'] = qt.pay_type
+            result.append(item)
+    return result
+

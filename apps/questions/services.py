@@ -554,3 +554,27 @@ def copy_channel_tmp_table(type):
             ChannelData.objects.update_or_create(type=type, index=i.index, defaults=item)
         ChannelData.objects.filter(type=type).filter(~Q(index__in=index_list)).delete()
     return
+
+def check_channel_add_data(data):
+    main_title = data.get('main_title', '')
+    type = data.get('type')
+    channels = data.get('channel', [])
+    if type not in ['banner', '金刚位', '横滑列表', '纵向列表']:
+        raise Exception_(f'不支持{type}频道类型')
+    if len(main_title) > 10:
+        raise Exception_("主标题不能超过10个字！")
+    if type=="banner" and len(channels) > 10:
+        raise Exception_('banner 类型最多只能配置10条数据！')
+    if type == "金刚位" and len(channels) > 4:
+        raise Exception_('金刚位最多只能配置4条数据！')
+    if type == "横滑列表" and len(channels) > 50:
+        raise Exception_('横滑列表最多只能配置50条数据！')
+    if type == "纵向列表" and len(channels) > 100:
+        raise Exception_('纵向列表最多只能配置100条数据！')
+    index = 1
+    for i in channels:
+        if int(i.get('index', '0')) != index:
+            raise Exception_(f'编号index {i.index}错误！')
+        index += 1
+    return
+

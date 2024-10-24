@@ -1,5 +1,6 @@
 import base64
 import logging
+import re
 import time
 import uuid
 from datetime import datetime
@@ -19,7 +20,8 @@ from apps.users.permission import WexinPermission
 from apps.users.utils import get_user_id
 from apps.wechats.models import UserAnswer, UserAnswer_tmp
 from apps.wechats.serizlizers import QuestionTypeListSerializers
-from apps.wechats.services import generate_result, count_finish_number, count_show_number, check_user_answer, user_is_payed
+from apps.wechats.services import generate_result, count_finish_number, count_show_number, check_user_answer, \
+    user_is_payed, get_user_questions
 from apps.wechats.tmp_service import get_tmp_result, get_user_tmp_answer_result
 from utils.generate_jwt import generate_jwt
 
@@ -80,6 +82,64 @@ class GetPhoneAPIView(CreateAPIView, ListAPIView):
             logger = logging.getLogger("log")
             logger.error(e)
             return Response({"detail": "fail", "data": "获取手机号失败！"})
+
+
+class UserInfoAPIView(ListAPIView):
+    permission_classes = (WexinPermission,)
+
+    def list(self, request, *args, **kwargs):
+        token = request.META.get('HTTP_AUTHORIZATION')
+        user_id = get_user_id(token)
+        user = User.objects.filter(user_id=user_id).first()
+        if not user:
+            return Response({'detail': "fail", 'data': "用户不存在！"})
+        data = {}
+        data['user_id'] = user_id
+        data['user_name'] = user.user_name
+        data['phone'] = user.mobile
+        questions = get_user_questions(user_id)
+        data['questions'] = questions
+        return Response({"detail": "success", "data": data})
+
+class ChangeUsernameAPIView(CreateAPIView):
+    permission_classes = (WexinPermission,)
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        user_name = data.get('user_name')
+        if not user_name:
+            return Response({'detail': "fail", 'data': "用户名不能为空！"})
+        if len(user_name) > 20:
+            return Response({'detail': "fail", 'data': "用户名长度大于20个字符！"})
+        token = request.META.get('HTTP_AUTHORIZATION')
+        user_id = get_user_id(token)
+        user = User.objects.filter(user_id=user_id).first()
+        if not user:
+            return Response({'detail': "fail", 'data': "用户不存在！"})
+        user.user_name = user_name
+        user.save()
+        return Response({"detail": "success", "data": data})
+
+class ChangePhoneAPIView(CreateAPIView):
+    permission_classes = (WexinPermission,)
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        phone = data.get('phone')
+        if not phone:
+            return Response({'detail': "fail", 'data': "手机号不能为空！"})
+        mobile_re = re.compile(r'^(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57]|19[012356789])[0-9]{8}$')
+        if not mobile_re.match(phone):
+            return Response({'detail': "fail", 'data': "错误的手机号！"})
+        token = request.META.get('HTTP_AUTHORIZATION')
+        user_id = get_user_id(token)
+        user = User.objects.filter(user_id=user_id).first()
+        if not user:
+            return Response({'detail': "fail", 'data': "用户不存在！"})
+        user.mobile = phone
+        user.save()
+        return Response({"detail": "success", "data": data})
+
 
 class IndexView(ListAPIView):
     queryset = QuestionType.objects.filter(status="已上线").order_by('-update_time')
@@ -373,7 +433,10 @@ class ChannelAPIView(ListAPIView):
                     item['qt_id'] = i.qt_id
                     item['source'] = i.source
                     item['title'] = i.title
-                    item['img'] = i.img
+                    img = ""
+                    if i.img:
+                        img = settings.DOMAIN + "/media/image/" + i.img
+                    item['img'] = img
                     item['url'] = i.url
                     item['type'] = i.type
                     item['desc'] = i.desc

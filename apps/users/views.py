@@ -32,7 +32,7 @@ from django.http import HttpResponse
 from qrcode import make as qrcode_make
 
 from .utils import token_to_name, count_checking_user, check_user_name_pass, check_name_pass, check_email_pass, \
-    check_pwd_pass, count_checking_question
+    check_pwd_pass, count_checking_question, count_checking_channel
 
 
 class RegisterAPIView(CreateAPIView):
@@ -1055,8 +1055,9 @@ class UserInfoAPIView(APIView):
             if obj:
                 mun = count_checking_user() if obj.role in [1, 2] else 0
                 q_num = count_checking_question() if obj.role in [1, 2] else 0
-                return Response({"role": obj.role, "name": obj.name, "email": obj.email,
-                                 "checking_num": mun, "checking_num_question": q_num})
+                channel_num = count_checking_channel() if obj.role in [1, 2] else 0
+                return Response({"role": obj.role, "name": obj.name, "email": obj.email, "checking_num": mun,
+                                  "checking_num_question": q_num, "checking_num_channel": channel_num})
             return Response({"detail": "user not found !"}, status=400)
         except Exception as e:
             return Response({"detail": "permission deny! "}, status=403)

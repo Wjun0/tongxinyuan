@@ -1,12 +1,13 @@
 import uuid
 from datetime import datetime
 
+from django.db.models import Q
 from rest_framework.response import Response
 from apps.questions.models import Channel_tmp, ChannelData_tmp
 from apps.questions.serizlizers import Channel_tmpListSerializers
 from rest_framework.generics import CreateAPIView, ListAPIView
 
-from apps.questions.services import copy_channel_tmp_table
+from apps.questions.services import copy_channel_tmp_table, check_channel_add_data
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import isManagementPermission, idAdminAndCheckerPermission
 from apps.users.utils import token_to_name
@@ -56,6 +57,8 @@ class ChannelADDView(CreateAPIView, ListAPIView):
         type = data.get('type')
         channels = data.get('channel', [])
         u_name = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        check_channel_add_data(data)
+        index_list = []
         for i in channels:
             index = i.get('index', '')
             item = {}
@@ -65,11 +68,14 @@ class ChannelADDView(CreateAPIView, ListAPIView):
             item['source'] = i.get('source', '')
             item['type'] = type
             item['title'] = i.get('title', '')
+            item['img'] = i.get('img', '')
             item['url'] = i.get('url', '')
             item['desc'] = i.get('desc', '')
             item['amount'] = i.get('amount', '')
             item['pay_type'] = i.get('pay_type', '')
             ChannelData_tmp.objects.update_or_create(index=index, type=type, defaults=item)
+            index_list.append(index)
+        ChannelData_tmp.objects.filter(type=type).filter(~Q(index__in=index_list)).delete()
         defaults = {}
         defaults['u_id'] = str(uuid.uuid4())
         defaults['create_user'] = u_name
@@ -103,6 +109,7 @@ class ChannelADDView(CreateAPIView, ListAPIView):
                     "qt_id": j.qt_id,
                     "source": j.source,
                     "title": j.title,
+                    "img": j.img,
                     "url": j.url,
                     "desc": j.desc,
                     "amount": j.amount,
@@ -128,6 +135,7 @@ class ChannelADDView(CreateAPIView, ListAPIView):
                         "qt_id": j.qt_id,
                         "source": j.source,
                         "title": j.title,
+                        "img": j.img,
                         "url": j.url,
                         "desc": j.desc,
                         "amount": j.amount,
