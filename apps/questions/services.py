@@ -427,6 +427,42 @@ def copy_use_table(qt_id):
 
     return
 
+def copy_used_channel_table(type):
+    c = Channel.objects.filter(type=type).first()
+    if c:
+        data = {}
+        data['u_id'] = c.u_id
+        data['main_title'] = c.main_title
+        data['type'] = c.type
+        data['update_user'] = c.update_user
+        data['create_user'] = c.create_user
+        data['check_user'] = c.check_user
+        data['status'] = c.status
+        data['create_time'] = c.create_time
+        data['update_time'] = c.update_time
+        Channel_tmp.objects.update_or_create(type=type, defaults=data)
+        cds = ChannelData.objects.filter(type=type)
+        index_list = []
+        for i in cds:
+            item = {}
+            item['u_id'] = i.u_id
+            item['index'] = i.index
+            item['qt_id'] = i.qt_id
+            item['source'] = i.source
+            item['title'] = i.title
+            item['img'] = i.img
+            item['url'] = i.url
+            item['type'] = i.type
+            item['desc'] = i.desc
+            item['amount'] = i.amount
+            item['pay_type'] = i.pay_type
+            item['create_time'] = i.create_time
+            item['update_time'] = i.update_time
+            item['status'] = i.status
+            index_list.append(i.index)
+            ChannelData_tmp.objects.update_or_create(type=type, index=i.index, defaults=item)
+        ChannelData_tmp.objects.filter(type=type).filter(~Q(index__in=index_list)).delete()
+
 
 def copy_question(qt_id, user):
     q = QuestionType_tmp.objects.filter(u_id=qt_id).first()
@@ -516,7 +552,6 @@ def copy_question(qt_id, user):
                                          result_desc=d.result_desc, result_desc_html=d.result_desc_html, value=new_value)
         return new_qt_id, title
     return None
-
 
 def copy_channel_tmp_table(type):
     c = Channel_tmp.objects.filter(type=type).first()

@@ -33,6 +33,9 @@ urlpatterns = [
     re_path(r'^add_channel/$', channel_views.ChannelADDView.as_view()), # post新增编辑 / get查看
     re_path(r'^submit_channel/$', channel_views.ChannelSubmitView.as_view()), # 保存提交审核
     re_path(r'^check_channel/$', channel_views.ChannelCheckView.as_view()), # 审核
+    re_path(r'^delete_channel/$', channel_views.ChannelDeleteView.as_view()),    # 删除草稿
+    re_path(r'^undo_channel/$', channel_views.UndoChannelCheckView.as_view()),      # 撤销审核
+    re_path(r'^operator_online_channel/$', channel_views.OnlineChannelCheckView.as_view()),      # 下线
 
     # 审批接口
     re_path(r'^check_index/$', views.CheckIndexView.as_view()),  # 审批列表页

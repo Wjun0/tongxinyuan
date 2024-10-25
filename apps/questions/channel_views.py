@@ -3,13 +3,14 @@ from datetime import datetime
 
 from django.db.models import Q
 from rest_framework.response import Response
-from apps.questions.models import Channel_tmp, ChannelData_tmp
+from apps.questions.models import Channel_tmp, ChannelData_tmp, Channel
 from apps.questions.serizlizers import Channel_tmpListSerializers
 from rest_framework.generics import CreateAPIView, ListAPIView
 
-from apps.questions.services import copy_channel_tmp_table, check_channel_add_data
+from apps.questions.services import copy_channel_tmp_table, check_channel_add_data, copy_used_channel_table
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import isManagementPermission, idAdminAndCheckerPermission
+from apps.users.permission_utils import user_is_operator
 from apps.users.utils import token_to_name
 
 
@@ -196,3 +197,72 @@ class ChannelCheckView(CreateAPIView):
             copy_channel_tmp_table(type)
             return Response({"detail": "success"})
         return Response({"detail": "参数错误！"}, status=400)
+
+
+class ChannelDeleteView(CreateAPIView):
+    queryset = Channel_tmp.objects.all()
+    permission_classes = (isManagementPermission,)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        type = data.get('type')
+        obj = Channel_tmp.objects.filter(type=type).first()
+        if not obj:
+            return Response({"detail": "频道不存在！"}, status=400)
+        user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+            if obj.create_user != user:
+                return Response({"detail": "无权限操作！"}, status=403)
+        if obj.status not in ["草稿", "已上线（有草稿）"]:
+            return Response({"detail": "只能删除草稿问卷！"}, status=400)
+        if obj.status == "草稿":
+            obj.delete()  # 草稿直接删除(还要删除关联数据)
+        else:
+            # 将已上线的表数据复制回来
+            copy_used_channel_table(type)
+        return Response({"detail": "success"})
+
+
+class UndoChannelCheckView(CreateAPIView):  # 撤销审核
+    queryset = Channel_tmp.objects.all()
+    permission_classes = (isManagementPermission,)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        type = data.get('type')
+        obj = Channel_tmp.objects.filter(type=type).first()
+        user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
+        if obj:
+            if user_is_operator(request):  # 如果是运营人员，判断是否有权限
+                if obj.create_user != user:
+                    return Response({"detail": "无权限操作！"}, status=403)
+            if obj.status == "待审核":
+                obj.status = "草稿"
+                obj.save()
+                return Response({"detail": "success"})
+            if obj.status == "已上线（草稿待审核）":
+                obj.status = "已上线（有草稿）"
+                obj.save()
+                return Response({"detail": "success"})
+            return Response({"detail": "非待审核数据不支持撤销！"}, status=400)
+        return Response({"detail": "频道不存在！"}, status=400)
+
+
+class OnlineChannelCheckView(CreateAPIView):
+    queryset = Channel_tmp.objects.all()
+    permission_classes = (idAdminAndCheckerPermission,)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        type = data.get('type')
+        operator = data.get('operator')
+        c_t = Channel_tmp.objects.filter(type=type).first()
+        c = Channel.objects.filter(type=type).first()
+        if c_t and c:
+            c_t.status = "已下线"
+            c.status = "已下线"
+            c.save()
+            c_t.save()
+            return Response({"detail": "success"})
+        return Response({"detail": "参数错误！"}, status=400)
+
