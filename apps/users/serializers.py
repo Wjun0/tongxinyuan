@@ -3,6 +3,7 @@ import os
 from django.conf import settings
 from rest_framework import serializers
 from apps.users.models import User, Media
+from apps.wechats.models import UserAnswer
 
 
 class UserSerizlizers(serializers.ModelSerializer):
@@ -28,4 +29,12 @@ class MedaiSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Media
+        fields = '__all__'
+
+
+
+class UserAnswerSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserAnswer
         fields = '__all__'

@@ -9,6 +9,7 @@ from django.shortcuts import render
 # Create your views here.
 from django_filters import rest_framework
 from drf_yasg.openapi import Schema, TYPE_OBJECT, TYPE_STRING, TYPE_INTEGER, FORMAT_DATETIME
+from requests import options
 from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, get_object_or_404, DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,7 +17,7 @@ from weixin import WXAPPAPI
 import jwt
 import datetime, base64, time, re
 from utils.generate_jwt import generate_jwt, jwt_decode
-from .filters import UserListerFilter, MediaListerFilter
+from .filters import UserListerFilter, MediaListerFilter, UserAnswerMediaListerFilter
 from .models import User, Media, CheckEmailCode, Document
 from drf_yasg.utils import swagger_auto_schema
 
@@ -24,15 +25,18 @@ from .pagenation import ResultsSetPagination
 from .permission import LoginPermission, idAdminAndCheckerPermission, isManagementPermission, FlushPermission
 from .permission_utils import user_is_checker, user_is_operator, operator_change_data
 from .send_email import send
-from .serializers import UserSerizlizers, MedaiSerializers
+from .serializers import UserSerizlizers, MedaiSerializers, UserAnswerSerializers
 import uuid
 from django.utils import timezone
 import io
 from django.http import HttpResponse
 from qrcode import make as qrcode_make
 
+from .servers import filter_queryset, get_response_data
 from .utils import token_to_name, count_checking_user, check_user_name_pass, check_name_pass, check_email_pass, \
     check_pwd_pass, count_checking_question, count_checking_channel
+from ..questions.models import QuestionType, Question, Option
+from ..wechats.models import UserAnswer
 
 
 class RegisterAPIView(CreateAPIView):
@@ -1061,4 +1065,59 @@ class UserInfoAPIView(APIView):
             return Response({"detail": "user not found !"}, status=400)
         except Exception as e:
             return Response({"detail": "permission deny! "}, status=403)
+
+
+class WeixinUserInfoAPIView(ListAPIView):
+    permission_classes = (isManagementPermission,)
+    filterset_class = UserAnswerMediaListerFilter
+    pagination_class = ResultsSetPagination
+    serializer_class = UserAnswerSerializers
+    queryset = UserAnswer.objects.order_by("-id")
+
+    def list(self, request, *args, **kwargs):
+        data = request.query_params
+        download = data.get("download")
+        queryset = self.get_queryset()
+        queryset = filter_queryset(queryset, request)
+        data = get_response_data(queryset)
+        if download:
+            return Response(data)
+        page = self.paginate_queryset(data)
+        return self.get_paginated_response(page)
+
+
+class WeixinUserDetailAPIView(ListAPIView):
+    permission_classes = (isManagementPermission,)
+    pagination_class = ResultsSetPagination
+    serializer_class = UserAnswerSerializers
+    queryset = UserAnswer.objects.order_by("-id")
+
+    def list(self, request, *args, **kwargs):
+        data = request.query_params
+        u_id = data.get("u_id")
+        obj = self.get_queryset().filter(u_id=u_id).first()
+        if obj:
+            data = {}
+            qt_id = obj.qt_id
+            qt = QuestionType.objects.filter(u_id=qt_id).first()
+            data['title'] = qt.title
+            ques = Question.objects.filter(qt_id=qt_id).order_by('number')
+            questions = []
+            for i in ques:
+                item = {}
+                item['u_id'] = i.u_id
+                ops = Option.objects.filter(q_id=i.u_id)
+                options = []
+                for j in ops:
+                    o_item = {}
+                    o_item['o_number'] = j.o_number
+                    o_item['o_content'] = j.o_content
+                    o_item['o_html_content'] = j.o_html_content
+                    options.append(o_item)
+                item['options'] = options
+                questions.append(item)
+            data['questions'] = questions
+            data['answer'] = obj.answer
+            return Response(data)
+        return Response({"detail":"fail", "message":"数据不存在！"})
 

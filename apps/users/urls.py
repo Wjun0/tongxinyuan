@@ -33,6 +33,8 @@ urlpatterns = [
     re_path(r'^checkEmail/$', views.ChechEmailAPIView.as_view()),            # 检查邮箱否被占用
     re_path(r'^send_email/$', views.SendEmailAPIView.as_view()),             # 发送邮件
     re_path(r'^userInfo/$', views.UserInfoAPIView.as_view()),                 # 用户信息
+    re_path(r'^wexin_userInfo/$', views.WeixinUserInfoAPIView.as_view()),     # 微信用户回答信息
+    re_path(r'^wexin_userdetail/$', views.WeixinUserDetailAPIView.as_view()), # 微信用户回答详情
     re_path(r'^checkpwd/$', views.CheckPWDandEmailView.as_view()),           # 校验密码和邮箱
 
     re_path(r'^index/$', upload_view_class.IndexUploadView.as_view()),          # 一个分片上传后被调用

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django_filters import rest_framework
 from apps.users.models import User, Media
+from apps.wechats.models import UserAnswer
 
 
 class UserListerFilter(rest_framework.FilterSet):
@@ -45,3 +46,19 @@ class MediaListerFilter(rest_framework.FilterSet):
     class Meta:
         model = Media
         fields = ["user", "type", "start_time", "end_time", "url"]
+
+class UserAnswerMediaListerFilter(rest_framework.FilterSet):
+
+    def start_time_filter(self, queryset, key, value):
+        return queryset.filter(create_time__gte=value)
+
+    def end_time_filter(self, queryset, key, value):
+        return queryset.filter(create_time__lte=value)
+    #
+    # def url_filter(self, queryset, key, value):
+    #     file_id = value.replace(settings.DOMAIN, "").replace("user/download/", "").replace("/","")
+    #     return queryset.filter(file_id=file_id)
+
+    class Meta:
+        model = UserAnswer
+        fields = ["create_time", "update_time"]

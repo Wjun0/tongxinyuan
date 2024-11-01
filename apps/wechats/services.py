@@ -448,6 +448,8 @@ def get_user_questions(user_id):
             if qt.title_img:
                 title_img = settings.DOMAIN + "/media/image/" + qt.title_img
             item['title_img'] = title_img
+            is_payed = user_is_payed(user_id, i.qt_id, "used")
+            item['is_payed'] = is_payed
             is_finish = False
             if finish_dic.get(i.qt_id):
                 is_finish = True

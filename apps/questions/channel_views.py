@@ -23,21 +23,21 @@ class ChannelView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         data = request.data
         main_title = data.get('main_title')
-        status = data.get('status')
+        status = data.get('status', [])
         create_user = data.get('create_user')
         check_user = data.get('check_user')
-        type = data.get('type')
+        type = data.get('type', [])
         queryset = self.get_queryset()
         if main_title:
             queryset = queryset.filter(main_title=main_title)
         if status:
-            queryset = queryset.filter(status=status)
+            queryset = queryset.filter(status__in=status)
         if create_user:
             queryset = queryset.filter(create_user=create_user)
         if check_user:
             queryset = queryset.filter(check_user=check_user)
         if type:
-            queryset = queryset.filter(type=type)
+            queryset = queryset.filter(type__in=type)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -184,7 +184,7 @@ class ChannelCheckView(CreateAPIView):
         check_user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
         if not obj:
             return Response({"detail": "频道不存在！"}, status=400)
-        if obj.status_tmp not in ["待审核", "已上线（草稿待审核）"]:
+        if obj.status not in ["待审核", "已上线（草稿待审核）"]:
             return Response({"detail": "非待审核数据不支持操作！"}, status=400)
         if status == "审核拒绝":
             t_status = "审核拒绝"
@@ -213,10 +213,11 @@ class ChannelDeleteView(CreateAPIView):
         if user_is_operator(request):  # 如果是运营人员，判断是否有权限
             if obj.create_user != user:
                 return Response({"detail": "无权限操作！"}, status=403)
-        if obj.status not in ["草稿", "已上线（有草稿）"]:
+        if obj.status not in ["草稿", "已上线（有草稿）", '已上线（草稿审核拒绝）']:
             return Response({"detail": "只能删除草稿问卷！"}, status=400)
         if obj.status == "草稿":
             obj.delete()  # 草稿直接删除(还要删除关联数据)
+            ChannelData_tmp.objects.filter(type=type).delete()
         else:
             # 将已上线的表数据复制回来
             copy_used_channel_table(type)
