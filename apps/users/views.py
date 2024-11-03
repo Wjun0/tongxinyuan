@@ -1106,6 +1106,10 @@ class WeixinUserDetailAPIView(ListAPIView):
             for i in ques:
                 item = {}
                 item['u_id'] = i.u_id
+                item['q_title'] = i.q_title
+                item['q_title_html'] = i.q_title_html
+                item['q_type'] = i.q_type
+                item['q_attr'] = i.q_attr
                 ops = Option.objects.filter(q_id=i.u_id)
                 options = []
                 for j in ops:

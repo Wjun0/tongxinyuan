@@ -70,13 +70,13 @@ schema_view = get_schema_view(
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from utils.schedule_utils import update_user_status, update_question_status
+from utils.schedule_utils import update_user_status, update_question_status, backup_data
 
 sche = BackgroundScheduler()
 sche.add_job(update_user_status, trigger=CronTrigger(second="*/30"), max_instances=2)  # 30秒执行一次
+sche.add_job(backup_data, trigger=CronTrigger(hour=1), max_instances=2)  # 30秒执行一次
 # sche.add_job(update_question_status, trigger=CronTrigger(second="*/30"), max_instances=2)  # 更新问卷状态
 sche.start()
-
 
 urlpatterns = [
     #path('admin/', admin.site.urls),
