@@ -7,6 +7,7 @@ class QuestionType(models.Model):
     # 问卷类型表
     id = models.AutoField(primary_key=True)
     u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
+    qt_type = models.CharField(max_length=128, null=True, blank=True, default='', verbose_name="问卷类型（文本|音频/视频）")
     background_img = models.CharField(max_length=128, null=True, blank=True, default='', verbose_name="问卷背景")
     title_img = models.CharField(max_length=128, default='', verbose_name="主图")
     title = models.CharField(max_length=32, default='', verbose_name="问卷标题")
@@ -38,6 +39,7 @@ class QuestionType_tmp(models.Model):
     # 问卷类型表
     id = models.AutoField(primary_key=True)
     u_id = models.CharField(max_length=128, default='',unique=True, verbose_name="唯一id")
+    qt_type = models.CharField(max_length=128, null=True, blank=True, default='', verbose_name="问卷类型（文本|音频/视频）")
     background_img = models.CharField(max_length=128, null=True, blank=True, default='', verbose_name="问卷背景")
     title_img = models.CharField(max_length=128, default='', verbose_name="主图")
     title = models.CharField(max_length=32, default='', verbose_name="问卷标题")
@@ -71,6 +73,7 @@ class Question(models.Model):
     u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
     qt_id = models.CharField(max_length=128, default='', verbose_name="问卷类型id")
     q_type = models.CharField(max_length=128, default='', verbose_name="问卷类型 单选|多选|问答题")
+    qt_type = models.CharField(max_length=128, default='', verbose_name="问题类型 文本|音频|视频")
     q_attr = models.CharField(max_length=128, default='', verbose_name="问卷属性 普通题|性别题|年龄题")
     q_value_type = models.CharField(max_length=128, default='', verbose_name="问卷赋值类型 分值|专制|D")
     q_title = models.TextField(default='', verbose_name="问卷标题")
@@ -92,6 +95,7 @@ class Question_tmp(models.Model):
     u_id = models.CharField(max_length=128, default='', unique=True, verbose_name="唯一id")
     qt_id = models.CharField(max_length=128, default='', verbose_name="问卷类型id")
     q_type = models.CharField(max_length=128, default='', verbose_name="问卷类型 单选|多选|简答")
+    qt_type = models.CharField(max_length=128, default='', verbose_name="问题类型 文本|音频|视频")
     q_attr = models.CharField(max_length=128, default='', verbose_name="问卷属性 普通题|性别题|年龄题")
     q_value_type = models.CharField(max_length=128, default='', verbose_name="问卷赋值类型 分值|专制|D")
     q_title = models.TextField(default='', verbose_name="问卷标题")

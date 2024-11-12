@@ -340,6 +340,7 @@ class IndexView(CreateAPIView):
         check_user = data.get('check_user')
         order = data.get('order')
         download = data.get('download')
+        qt_type = data.get('qt_type')
         queryset = self.get_queryset()
         if title:
             queryset = queryset.filter(title__icontains=title)
@@ -349,6 +350,8 @@ class IndexView(CreateAPIView):
             queryset = queryset.filter(check_user__icontains=check_user)
         if status_tmp:
             queryset = queryset.filter(status_tmp__in=status_tmp)
+        if qt_type:
+            queryset = queryset.filter(qt_type=qt_type)
         for o in order:
             order_list = ['show_number', '-show_number', "finish_number", "-finish_number",
                           "create_time", '-create_time', 'update_time', '-update_time']

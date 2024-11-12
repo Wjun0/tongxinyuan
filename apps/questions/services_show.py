@@ -8,7 +8,7 @@ def get_show_question(qt_id):
     if qt:
         step1 = {"qt_id": qt.u_id, "start_time": qt.start_time, "end_time": qt.end_time, "background_img": qt.background_img, 'title_img': qt.title_img,
              "title":qt.title, "test_value": qt.test_value, "q_number": qt.q_number, "test_time": qt.test_time, "pay_type":qt.pay_type, 'amount':qt.amount,
-             "use_count": qt.use_count, "source": qt.source}
+             "use_count": qt.use_count, "source": qt.source, 'qt_type': qt.qt_type}
         result_tmp["step1"] = step1
         ques = Question_tmp.objects.filter(qt_id=qt_id)
         questions = []
@@ -25,7 +25,7 @@ def get_show_question(qt_id):
                     order.append({"u_id": j.u_id, "q_id": q_id, "number": i.number, "o_number": j.o_number,
                                   "o_content": j.o_content, "o_html_content": j.o_html_content,
                                   "next_q_id": j.next_q_id})
-            questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, 'q_attr':i.q_attr, 'q_value_type':i.q_value_type,
+            questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, "qt_type": i.qt_type, 'q_attr':i.q_attr, 'q_value_type':i.q_value_type,
                               "q_title": i.q_title, "q_title_html":i.q_title_html ,"number": i.number, "q_check_role": i.q_check_role,
                               "min_age":i.min_age,"max_age": i.max_age, "sex":i.sex, "q_options": options})
         result_tmp["step2"] = questions
@@ -67,7 +67,7 @@ def get_show_question(qt_id):
         step1 = {"qt_id": qt.u_id, "start_time": qt.start_time, "end_time": qt.end_time,
                  "background_img": qt.background_img, 'title_img': qt.title_img,
                  "title": qt.title, "test_value": qt.test_value, "q_number": qt.q_number, "test_time": qt.test_time,
-                 "use_count": qt.use_count, "source": qt.source}
+                 "use_count": qt.use_count, "source": qt.source, 'qt_type': qt.qt_type}
         result["step1"] = step1
         ques = Question.objects.filter(qt_id=qt_id)
         questions = []
@@ -85,7 +85,7 @@ def get_show_question(qt_id):
                                   "o_content": j.o_content, "o_html_content": j.o_html_content,
                                   "next_q_id": j.next_q_id})
             questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, 'q_attr': i.q_attr,
-                              'q_value_type': i.q_value_type,
+                              'q_value_type': i.q_value_type, "qt_type": i.qt_type,
                               "q_title": i.q_title, "q_title_html": i.q_title_html, "number": i.number,
                               "q_check_role": i.q_check_role,
                               "min_age": i.min_age, "max_age": i.max_age, "sex": i.sex, "q_options": options})

@@ -18,6 +18,7 @@ def add_question_type(request):
     title_img = data.get('title_img')
     title = data.get('title')
     test_value = data.get('test_value')
+    qt_type = data.get('qt_type')
     q_number = data.get('q_number')
     test_time = data.get('test_time')
     use_count = data.get('use_count')
@@ -50,6 +51,8 @@ def add_question_type(request):
     #     raise Exception_("预计用时只支持数字（支持小数）")
     if len(title) > 54:
         raise Exception_("问卷标题不超过54个字!")
+    if qt_type not in ['文本', '语音/视频']:
+        raise Exception_('类型不是文本|语音/视频')
     return True
 
 def add_question(request):
@@ -65,7 +68,7 @@ def add_question(request):
             q_id = str(uuid.uuid4())
         number = q.get('number')
         q_data = {"number": q.get('number'), "qt_id": qt_id, "u_id": q_id,
-                  "q_attr": q.get('q_attr'), "q_type": q.get('q_type'),
+                  "q_attr": q.get('q_attr'), "q_type": q.get('q_type'), 'qt_type':q.get('qt_type'),
                   "q_title": q.get('q_title'), "q_title_html": q.get('q_title_html'),
                   "q_check_role": q.get('q_check_role'),
                   "min_age": q.get('min_age'), 'max_age': q.get('max_age'), 'sex': q.get('sex')}
@@ -244,7 +247,7 @@ def show_result(request):
     qt = QuestionType_tmp.objects.filter(u_id=qt_id).first()
     if qt:
         step1 = {"qt_id": qt.u_id, "start_time": qt.start_time, "end_time": qt.end_time, "background_img": qt.background_img, 'title_img': qt.title_img,
-             "title":qt.title, "test_value": qt.test_value, "q_number": qt.q_number, "test_time": qt.test_time,
+             "title":qt.title, "test_value": qt.test_value, "q_number": qt.q_number, "test_time": qt.test_time, "qt_type": qt.qt_type,
              "use_count": qt.use_count, "source": qt.source, "pay_type": qt.pay_type, "amount": qt.amount}
         result["step1"] = step1
         ques = Question_tmp.objects.filter(qt_id=qt_id)
@@ -470,7 +473,7 @@ def copy_question(qt_id, user):
         new_qt_id = str(uuid.uuid4())
         title = "【复制】" + q.title
         QuestionType_tmp.objects.create(u_id=new_qt_id, background_img=q.background_img, title_img=q.title_img, title=title,
-            test_value=q.test_value, test_value_html=q.test_value_html, q_number=q.q_number,
+            test_value=q.test_value, test_value_html=q.test_value_html, q_number=q.q_number, qt_type=q.qt_type,
             test_time=q.test_time, use_count=q.use_count, source=q.source, status="草稿", status_tmp="草稿",
             show_number=0, finish_number=0, update_user=user, create_user=user, check_user='',
             amount=q.amount, pay_type=q.pay_type, start_time=q.start_time, end_time=q.end_time)
@@ -478,7 +481,7 @@ def copy_question(qt_id, user):
         old_new_dic = {}
         for i in ques:
             new_q_id = str(uuid.uuid4())
-            Question_tmp.objects.create(u_id=new_q_id, qt_id=new_qt_id, q_type=i.q_type, q_attr=i.q_attr,
+            Question_tmp.objects.create(u_id=new_q_id, qt_id=new_qt_id, q_type=i.q_type, qt_type=i.qt_type, q_attr=i.q_attr,
                         q_value_type=i.q_value_type, q_title=i.q_title, q_title_html=i.q_title_html,
                         number=i.number, q_check_role=i.q_check_role, min_age=i.min_age, max_age=i.max_age,
                         sex=i.sex)
