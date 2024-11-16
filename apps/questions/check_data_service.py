@@ -28,13 +28,15 @@ def check_add_question(data):
     index = 1
     for i in questions:
         number = i.get('number')
-        q_type = i.get('q_type')
-        qt_type = i.get('qt_type')
-        q_options = i.get('q_options')
-        if q_type not in ['单选题', '多选题', '问答题']:
-            raise Exception_('不支持该种题目类型！')
-        if qt_type not in ['文本题', '语音题', '视频题']:
-            raise Exception_('不支持该种题目类型！')
+        q_type = i.get('q_type', '')
+        qt_type = i.get('qt_type', '')
+        q_options = i.get('q_options', [])
+        if q_type:
+            if q_type not in ['单选题', '多选题', '问答题']:
+                raise Exception_('不支持该种题目类型！')
+        if qt_type:
+            if qt_type not in ['文本题', '语音题', '视频题']:
+                raise Exception_('不支持该种题目类型！')
         try:
             if int(number) != index:
                 raise Exception_(f'问题编号{index}错误！')

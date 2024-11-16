@@ -7,7 +7,7 @@ class QuestionTypeTMPListSerializers(serializers.ModelSerializer):
     create_user_id = serializers.SerializerMethodField(method_name="get_create_user_id")
     class Meta:
         model = QuestionType_tmp
-        fields = ['u_id', 'title', 'show_number', 'finish_number', 'create_time', 'update_time', 'qt_type'
+        fields = ['u_id', 'title', 'show_number', 'finish_number', 'create_time', 'update_time', 'qt_type',
                   'create_user', 'create_user_id', 'check_user', 'update_user', 'status_tmp', 'check_time']
 
     def get_create_user_id(self, instance):

@@ -68,10 +68,10 @@ def add_question(request):
             q_id = str(uuid.uuid4())
         number = q.get('number')
         q_data = {"number": q.get('number'), "qt_id": qt_id, "u_id": q_id,
-                  "q_attr": q.get('q_attr'), "q_type": q.get('q_type'), 'qt_type':q.get('qt_type'),
-                  "q_title": q.get('q_title'), "q_title_html": q.get('q_title_html'),
-                  "q_check_role": q.get('q_check_role'),
-                  "min_age": q.get('min_age'), 'max_age': q.get('max_age'), 'sex': q.get('sex')}
+                  "q_attr": q.get('q_attr',''), "q_type": q.get('q_type', ''), 'qt_type':q.get('qt_type', ""),
+                  "q_title": q.get('q_title', ''), "q_title_html": q.get('q_title_html', ''),
+                  "q_check_role": q.get('q_check_role', ''),
+                  "min_age": q.get('min_age', ''), 'max_age': q.get('max_age', ''), 'sex': q.get('sex', '')}
         cre = Question_tmp.objects.update_or_create(u_id=q_id, defaults=q_data)
         del_q_id.append(q_id)
         a_data_list = []
@@ -87,8 +87,8 @@ def add_question(request):
                                  "o_content": a.get('o_content'), "o_html_content": a.get('o_html_content')})
 
         Option_tmp.objects.filter(q_id=q_id).filter(~Q(u_id__in=del_a_id)).delete()  # 将多余的删除
-        res.append({"q_id": q_id, "qt_id": qt_id, "number": q.get('number'), "q_type":q.get('q_type'),
-                    "q_attr": q.get('q_attr'), "q_title": q.get('q_title'), "q_check_role": q.get('q_check_role'),
+        res.append({"q_id": q_id, "qt_id": qt_id, "number": q.get('number', ''), "q_type":q.get('q_type', ''),
+                    "q_attr": q.get('q_attr', ''), "q_title": q.get('q_title', ''), "q_check_role": q.get('q_check_role', ''),
                     "q_options": a_data_list})
     Question_tmp.objects.filter(qt_id=qt_id).filter(~Q(u_id__in=del_q_id)).delete()
     return res
