@@ -176,19 +176,22 @@ STATIC_ROOT = 'static/'
 
 MEDIA_ROOT = 'media/image/'
 MEDIA_URL = os.path.join(BASE_DIR, 'media/')
-# print(STATICFILES_DIRS)
+if not os.path.exists(MEDIA_URL):
+    os.makedirs(MEDIA_URL)
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+MEDIA_DATA = os.path.join(MEDIA_URL, 'media_data/')
+if not os.path.exists(MEDIA_DATA):
+    os.makedirs(MEDIA_DATA)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 #########日志配置#############
 import time
 cur_path = os.path.dirname(os.path.realpath(__file__))  # log_path是存放日志的路径
 log_path = os.path.join(os.path.dirname(cur_path), 'logs')
-if not os.path.exists(log_path): os.mkdir(log_path)  # 如果不存在这个logs文件夹，就自动创建一个
+if not os.path.exists(log_path):
+    os.mkdir(log_path)  # 如果不存在这个logs文件夹，就自动创建一个
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,

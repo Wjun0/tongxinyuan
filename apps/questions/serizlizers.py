@@ -27,7 +27,7 @@ class QuestionTMPSerializers(serializers.ModelSerializer):
     # 添加问题的序列化
     class Meta:
         model = Question_tmp
-        fields = ['u_id', 'qt_id', 'q_type', 'q_attr', 'q_value_type', 'q_title', 'q_title_html',
+        fields = ['u_id', 'qt_id', 'q_type', 'qt_type','q_attr', 'q_value_type', 'q_title', 'q_title_html',
                   'number', 'q_check_role', 'min_age', 'max_age', 'sex', 'q_options']
 
     def get_q_options(self, instance):

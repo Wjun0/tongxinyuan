@@ -173,11 +173,13 @@ STATIC_ROOT = 'static/'
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 MEDIA_ROOT = 'media/image/'
-MEDIA_URL = os.path.join(BASE_DIR, 'media/qrcode/')
-# print(STATICFILES_DIRS)
+MEDIA_URL = os.path.join(BASE_DIR, 'media/')
+if not os.path.exists(MEDIA_URL):
+    os.makedirs(MEDIA_URL)
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+MEDIA_DATA = os.path.join(MEDIA_URL, 'media_data/')
+if not os.path.exists(MEDIA_DATA):
+    os.makedirs(MEDIA_DATA)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

@@ -19,6 +19,7 @@ urlpatterns = [
     re_path(r'^pay/query/$', views_pay.PayQueryView.as_view()),       # 查询订单状态
 
     re_path(r'^channel/$', views.ChannelAPIView.as_view()),       # 频道
+    re_path(r'^upload/$', views.UploadView.as_view()),    # 上传音视频
 
 
 

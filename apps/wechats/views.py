@@ -1,5 +1,6 @@
 import base64
 import logging
+import os
 import re
 import time
 import uuid
@@ -13,7 +14,7 @@ from rest_framework.response import Response
 from weixin import WXAPPAPI
 
 from apps.questions.models import QuestionType, Question, Option, QuestionType_tmp, Question_tmp, Option_tmp, Channel, \
-    ChannelData
+    ChannelData, Image
 from apps.users.models import User
 from apps.users.pagenation import ResultsSetPagination
 from apps.users.permission import WexinPermission
@@ -445,3 +446,21 @@ class ChannelAPIView(ListAPIView):
                     channels.append(item)
                 data['channels'] = channels
         return Response({"detail": "success", "data": data})
+
+
+class UploadView(CreateAPIView):
+    permission_classes = (WexinPermission,)
+
+    def create(self, request, *args, **kwargs):
+        file = request.data.get("file")
+        file_name = file.name
+        file_type = file_name.split('.')[-1]
+        if file_type not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
+            return Response({"detail": "fail", "data": "不支持的文件类型！"})
+        uid = str(uuid.uuid4())
+        file_id = f"{uid}.{file_type}"
+        Image.objects.create(file_id=file_id, file_name=file_name, source="media_data")
+        with open(os.path.join(settings.BASE_DIR, "media", "media_data", file_id), 'wb')as f:
+            f.write(file.read())
+        return Response({"detail": "success", "data": {"file_id": file_id, "file_name": file_name}})
+
