@@ -265,7 +265,7 @@ def show_result(request):
                     order.append({"u_id": j.u_id, "q_id": q_id, "number": i.number, "o_number": j.o_number,
                                   "o_content": j.o_content, "o_html_content": j.o_html_content,
                                   "next_q_id": j.next_q_id})
-            questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, 'q_attr':i.q_attr, 'q_value_type':i.q_value_type,
+            questions.append({"u_id": i.u_id, "qt_id": i.qt_id, "q_type": i.q_type, "qt_type": i.qt_type, 'q_attr':i.q_attr, 'q_value_type':i.q_value_type,
                               "q_title": i.q_title, "q_title_html":i.q_title_html ,"number": i.number, "q_check_role": i.q_check_role,
                               "min_age":i.min_age,"max_age": i.max_age,"sex":i.sex, "q_options": options})
         result["step2"] = questions
@@ -305,7 +305,7 @@ def show_result(request):
 def copy_tmp_table(qt_id):
     q = QuestionType_tmp.objects.filter(u_id=qt_id).first()
     QuestionType.objects.update_or_create(u_id=qt_id, defaults={"background_img": q.background_img, 'title_img':q.title_img,
-                        'title':q.title, 'test_value':q.test_value, 'test_value_html':q.test_value_html,
+                        'title':q.title, 'test_value':q.test_value, 'test_value_html':q.test_value_html, 'qt_type': q.qt_type,
                         'q_number':q.q_number, 'test_time':q.test_time, 'use_count':q.use_count, 'source':q.source,
                         'status': q.status, 'status_tmp': q.status_tmp, 'show_number':q.show_number, 'finish_number': q.finish_number,
                         'update_user': q.update_user, 'create_user':q.create_user, 'check_user':q.check_user,
@@ -316,7 +316,7 @@ def copy_tmp_table(qt_id):
     for i in qq:
         q_uid_list.append(i.u_id)  # 记录更新的id,不在里面的需要删除
         Question.objects.update_or_create(qt_id=qt_id, number=i.number,
-                                          defaults={'u_id':i.u_id, 'q_type':i.q_type,
+                                          defaults={'u_id':i.u_id, 'q_type':i.q_type, 'qt_type':i.qt_type,
                         'q_attr': i.q_attr, 'q_value_type':i.q_value_type, 'q_title': i.q_title,
                         'q_title_html':i.q_title_html, 'number':i.number, 'q_check_role':i.q_check_role,
                         "min_age": i.min_age,'max_age': i.max_age, 'sex': i.sex,
@@ -371,7 +371,7 @@ def copy_tmp_table(qt_id):
 def copy_use_table(qt_id):
     q = QuestionType.objects.filter(u_id=qt_id).first()
     QuestionType_tmp.objects.update_or_create(u_id=qt_id, defaults={"background_img": q.background_img, 'title_img':q.title_img,
-                        'title':q.title, 'test_value':q.test_value, 'test_value_html':q.test_value_html,
+                        'title':q.title, 'test_value':q.test_value, 'test_value_html':q.test_value_html, 'qt_type':q.qt_type,
                         'q_number':q.q_number, 'test_time':q.test_time, 'use_count':q.use_count, 'source':q.source,
                         'status': q.status, 'status_tmp': q.status_tmp, 'show_number':q.show_number, 'finish_number': q.finish_number,
                         'update_user': q.update_user, 'create_user':q.create_user, 'check_user':q.check_user, 'start_time':q.start_time,
@@ -380,7 +380,7 @@ def copy_use_table(qt_id):
     q_uid_list = []
     for i in qq:
         q_uid_list.append(i.u_id)  # 记录更新的id,不在里面的需要删除
-        Question_tmp.objects.update_or_create(qt_id=qt_id, u_id=i.u_id, defaults={'q_type':i.q_type,
+        Question_tmp.objects.update_or_create(qt_id=qt_id, u_id=i.u_id, defaults={'q_type':i.q_type, 'qt_type': i.qt_type,
                         'q_attr': i.q_attr, 'q_value_type':i.q_value_type, 'q_title': i.q_title,
                         'q_title_html':i.q_title_html, 'number':i.number, 'q_check_role':i.q_check_role,
                         "min_age": i.min_age,'max_age': i.max_age, 'sex': i.sex,
@@ -553,7 +553,7 @@ def copy_question(qt_id, user):
                                          dimension_name=d.dimension_name, result_number=d.result_number,
                                          result_name=d.result_name, result_name_html=d.result_name_html,
                                          result_desc=d.result_desc, result_desc_html=d.result_desc_html, value=new_value)
-        return new_qt_id, title
+        return new_qt_id, title, q.qt_type
     return None
 
 def copy_channel_tmp_table(type):

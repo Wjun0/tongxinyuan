@@ -201,7 +201,7 @@ class GETQuestionView(CreateAPIView):
             op = Option.objects.filter(q_id=obj.u_id)
         for i in op:
             options.append({"o_number": i.o_number, "o_content": i.o_content, "o_html_content": i.o_html_content})
-        result = {"q_id": obj.u_id, 'q_type': obj.q_type, 'q_attr': obj.q_attr,
+        result = {"q_id": obj.u_id, 'q_type': obj.q_type, 'qt_type': obj.qt_type, 'q_attr': obj.q_attr,
                   "number": obj.number, "end_number": end_num, "order": order,
                   'q_title': obj.q_title, 'q_title_html': obj.q_title_html, "options": options}
         return result
@@ -255,8 +255,7 @@ class GETQuestionView(CreateAPIView):
             l_q = Question.objects.filter(qt_id=qt_id, number=last_number).first()
         if not l_q:
             Response({"detail": "fail", "data": "找不到上一题的数据！"})
-        if l_q.q_type == "问答题":
-            # 没有定义下一题
+        if l_q.q_type in  ["问答题", "语音题", "视频题"]:
             number = int(last_number) + 1
             result = self.get_result(tmp, qt_id, order, end_num, number=str(number))
             return Response({"detail": "success", "data": result, 'title': title})
@@ -302,7 +301,8 @@ class QuestionView(CreateAPIView):
         q_id = data.get('q_id')
         o_number = data.get('o_number','')
         text = data.get('text','')
-        ans_id = data.get('ans_id','')
+        ans_id = data.get('ans_id', '')
+        file_id = data.get('file_id', '')
         tmp = data.get('tmp','')
         if not(qt_id and q_id):
             return Response({"detail": "fail",  "data": "参数错误！"})
@@ -352,11 +352,12 @@ class QuestionView(CreateAPIView):
             for i in o_number_list:
                 if i not in [chr(i) for i in range(65, 85)]:
                     return Response({"detail": "fail", "data": "错误的选项！"})
+        ######## 回答问题逻辑 ##########
         token = request.META.get('HTTP_AUTHORIZATION')
         user_id = get_user_id(token)
         if not ans_id:
             ans_id = str(uuid.uuid4())
-            an = {q_id: {"o_number": o_number, "text": text}}
+            an = {q_id: {"o_number": o_number, "text": text, "file_id":file_id}}
             default = {"u_id": ans_id, 'user_id': user_id, 'qt_id':qt_id, "answer": an, "result": {}}
             if tmp == "tmp":
                 UserAnswer_tmp.objects.update_or_create(u_id=ans_id, user_id=user_id, qt_id=qt_id, defaults=default)
@@ -370,7 +371,7 @@ class QuestionView(CreateAPIView):
         if not obj:
             return Response({"detail": "fail", "data": "参数错误！"})
         answer = obj.answer
-        answer[q_id] = {"o_number": o_number, "text": text}
+        answer[q_id] = {"o_number": o_number, "text": text, "file_id":file_id}
         obj.answer = answer
         obj.save()
         return Response({"detail": "success", "data": {"ans_id": ans_id}})

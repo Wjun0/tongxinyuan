@@ -323,8 +323,8 @@ class CopyAPIView(CreateAPIView):
         data = request.data
         qt_id = data.get('qt_id')
         user = token_to_name(request.META.get('HTTP_AUTHORIZATION'))
-        new_qt_id, title = copy_question(qt_id, user)
-        return Response({"detail": "success", "data": {'title': title,"new_qt_id": new_qt_id}})
+        new_qt_id, title, qt_type= copy_question(qt_id, user)
+        return Response({"detail": "success", "data": {'title': title,"new_qt_id": new_qt_id, "qt_type": qt_type}})
 
 class IndexView(CreateAPIView):
     queryset = QuestionType_tmp.objects.all()

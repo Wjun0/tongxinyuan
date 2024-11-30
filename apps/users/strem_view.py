@@ -7,6 +7,8 @@ from django.conf import settings
 from django.http import StreamingHttpResponse, HttpResponse, HttpResponseRedirect
 from django.utils import timezone
 from django.shortcuts import render
+
+from apps.questions.models import Image
 from apps.users.models import Media, Document, User
 from libs import ajax
 import requests
@@ -166,3 +168,40 @@ def play_media(request, file_id):
     audio_video = "video" if f_type in ["mp4", "flv", "avi", "mov"] else "audio"
     type = f"{audio_video}/{f_type}"
     return render(request, 'play_media.html', context={"url": url, "type": type})
+
+
+def play_user_media(request, file_id):
+    f = Image.objects.filter(file_id=file_id, source="media_data").first()
+    # f = Document.objects.filter(docfile=file_id).first()
+    if not f:
+        return HttpResponse('页面不存在', status=404)
+    ############
+    filename = f"media/media_data/{f.file_id}"
+    video_path = os.path.join(settings.BASE_DIR, filename)
+    """将视频文件以流媒体的方式响应"""
+    range_header = request.META.get('HTTP_RANGE', '').strip()
+    range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
+    range_match = range_re.match(range_header)
+    size = os.path.getsize(video_path)
+    content_type, encoding = mimetypes.guess_type(video_path)
+    content_type = content_type or 'application/octet-stream'
+    if range_match:
+        first_byte, last_byte = range_match.groups()
+        first_byte = int(first_byte) if first_byte else 0
+        last_byte = first_byte + 1024 * 1024 * 2  # 2M 每片,响应体最大体积
+        if last_byte >= size:
+            last_byte = size - 1
+        length = last_byte - first_byte + 1
+        resp = StreamingHttpResponse(file_iterator(video_path, offset=first_byte, length=length), status=206,
+                                     content_type=content_type)
+        resp['Content-Length'] = str(length)
+        resp['Content-Range'] = 'bytes %s-%s/%s' % (first_byte, last_byte, size)
+    else:
+        # 不是以视频流方式的获取时，以生成器方式返回整个文件，节省内存
+        resp = StreamingHttpResponse(FileWrapper(open(video_path, 'rb')), content_type=content_type)
+        resp['Content-Length'] = str(size)
+        # url = settings.DOMAIN + "/user/download/" + file_id + "/"
+        # return ajax.ajax_template(request, 'download_media.html', {'url': url})
+        # return ajax.ajax_template(request, '1.html', {'url': url})
+    resp['Accept-Ranges'] = 'bytes'
+    return resp

@@ -856,6 +856,14 @@ class DownloadQrcodeView(APIView):
             response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(path)
             return response
 
+class DownloadUserMedia(APIView):
+    permission_classes = (isManagementPermission,)
+
+    def get(self, request, *args, **kwargs):
+        file_id = request.query_params.get("file_id")
+        from apps.users.strem_view import play_user_media
+        return play_user_media(request, file_id)
+
 
 class ChechUserAPIView(APIView):
 

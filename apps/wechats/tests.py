@@ -1,12 +1,14 @@
 import random
 import requests
 # domain = "http://127.0.0.1:8081"
-domain = "https://api.uat.tong-psy.com"
 # headers = {
-#     "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvTEZDcTVWa2s0YjlWMjJDS1pWWEl5ZlZ5b1FBIiwiaWF0IjoxNzI0NTEzMTgzLjQyMzg1NTV9fQ.aBZWeBhqn4tp29nkIkNECD1wwc5tMicmksy3vZPd9hI"
-# }
+#     "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdWR0xma21IeUNWYUIyNEt1QWl0NjZJIiwiaWF0IjoxNzI2MTQzMzM5LjE0OTM0Nzh9fQ.xDYEe8G1kiVTOHkxtViNFGmgbomB1lkNoa8cxuu8wVk"}
+
+
+domain = "https://api.uat.tong-psy.com"
 headers = {
-    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdlZGZRcUdzYVBsemZhbEhXWTdGcUZvIiwiaWF0IjoxNzI3NTM1ODA5LjAyNDY3NDR9fQ.px0bvtPb4TiK_sU7KBeYtO7px3us7tX-8R8c7H_ZpeY"}
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdlZGZRcUdzYVBsemZhbEhXWTdGcUZvIiwiaWF0IjoxNzMxODM0NDQ4LjM3MDU4NTd9fQ.qn659L89NO9-jfybHM6-dg57Q7TgFi694kQq93LJURw"
+}
 
 def _get_question(data):
     url = f"{domain}/wechat/v1/get_question/"
@@ -34,6 +36,7 @@ def test_answer(qt_id):
     o_number = ''
     text = ""
     ans_id = ""
+    file_id = ""
     tmp = "tmpaaa"
     while True:
         data = {"u_id": qt_id,
@@ -61,8 +64,12 @@ def test_answer(qt_id):
             o_number = "A"
         if q_type == "多选题":
             o_number = random.choice(o_list)
+        if q_type == "语音题":
+            file_id = "test_file_id.mp3"
+        if q_type == "视频题":
+            file_id = "test_file_id.mp4"
 
-        ans = {"u_id": qt_id, "q_id": q_id, "o_number": o_number, "text": text, "ans_id": ans_id, "tmp": tmp}
+        ans = {"u_id": qt_id, "q_id": q_id, "o_number": o_number, "text": text, 'file_id':file_id, "ans_id": ans_id, "tmp": tmp}
         ans_resp = _answer_question(ans)
         ans_id = ans_resp.get('data').get('ans_id')
         last_q_id = q_id
@@ -80,6 +87,6 @@ def test_answer(qt_id):
 
 
 if __name__ == '__main__':
-    test_answer('22cc0a79-ff70-4839-8c0a-9904fd0bc4b8')
+    test_answer('eebfa943-031a-4bbc-863a-309e3a4c37b8')
     # test_answer('f885407b-db0b-475e-a026-38ebe7c7c0c2')
     # test_answer('55642b1e-1b29-487a-aafd-557ffdf3d088')

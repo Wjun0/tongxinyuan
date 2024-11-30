@@ -132,6 +132,23 @@ def generate_result(qt_id, ans_id):
         return
     answer = ans_obj.answer
     qt = QuestionType.objects.filter(u_id=qt_id).first()
+    if qt.qt_type == "语音/视频":
+        r_u_id = ''
+        background_img = ''
+        statement = ''
+        result_img = ''
+        dim_list = []
+        title_img = ''
+        dim_data = {"dimension_number": "", "dimension_name": "",
+                    "result_number": "", "result_name": "",
+                    "result_name_html": "", "result_desc": "问卷提交成功",
+                    "result_desc_html": '[{\"type\": \"string\", \"value\": \"问卷提交成功\"}]', "value": ""}
+        dim_list.append(dim_data)
+        res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img": background_img, "statement": statement,
+               "result_img": result_img, "dim_list": dim_list, "title_img": title_img}
+        ans_obj.result = res
+        ans_obj.save()
+        return
     try:
         ans_data, count_result_list = generate_user_answer_data(answer)
         ans_obj.count_result = {"option_data": count_result_list, "ans_data": ans_data}

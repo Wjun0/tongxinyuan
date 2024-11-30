@@ -32,7 +32,7 @@ def filter_queryset(queryset, request):
       queryset = queryset.filter(update_time__gt=start_time)
 
    if end_time:
-      queryset = queryset.filter(update_time__lte=start_time)
+      queryset = queryset.filter(update_time__lte=end_time)
 
    if title:
       qt_id_list = []
