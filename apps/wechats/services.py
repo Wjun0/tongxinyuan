@@ -453,7 +453,7 @@ def get_user_questions(user_id):
     finish_dic = {}
     ans = UserAnswer.objects.filter(user_id=user_id)
     for a in ans:
-        if a.result:
+        if a.is_finish == "已完成":
             finish_dic[a.qt_id] = {'qt_id': a.qt_id, 'ans_id': a.u_id}
     sh = UserShow_number.objects.filter(user_id=user_id).order_by('-update_time')
     for i in sh:
