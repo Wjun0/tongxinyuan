@@ -128,7 +128,7 @@ def generate_result(qt_id, ans_id):
     ans_obj = UserAnswer.objects.filter(u_id=ans_id, qt_id=qt_id).first()
     if not ans_obj:
         raise Exception_("找不到问卷结果！")
-    if ans_obj.result: # 已经生成结果直接返回
+    if ans_obj.is_finish == "已完成": # 已经生成结果直接返回
         return
     answer = ans_obj.answer
     qt = QuestionType.objects.filter(u_id=qt_id).first()
@@ -147,6 +147,7 @@ def generate_result(qt_id, ans_id):
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img": background_img, "statement": statement,
                "result_img": result_img, "dim_list": dim_list, "title_img": title_img}
         ans_obj.result = res
+        ans_obj.is_finish = "已完成"
         ans_obj.save()
         return
     try:
@@ -251,6 +252,7 @@ def generate_result(qt_id, ans_id):
         res = {"r_u_id": r_u_id, "qt_id": qt_id, "background_img":background_img, "statement":statement,
                "result_img": result_img, "dim_list": dim_list, "title_img": title_img}
     ans_obj.result = res
+    ans_obj.is_finish = "已完成"
     ans_obj.save()
     return
 

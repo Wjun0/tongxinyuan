@@ -358,7 +358,7 @@ class QuestionView(CreateAPIView):
         if not ans_id:
             ans_id = str(uuid.uuid4())
             an = {q_id: {"o_number": o_number, "text": text, "file_id":file_id}}
-            default = {"u_id": ans_id, 'user_id': user_id, 'qt_id':qt_id, "answer": an, "result": {}}
+            default = {"u_id": ans_id, 'user_id': user_id, 'qt_id':qt_id, "answer": an, "result": {}, "is_finish": "未完成"}
             if tmp == "tmp":
                 UserAnswer_tmp.objects.update_or_create(u_id=ans_id, user_id=user_id, qt_id=qt_id, defaults=default)
             else:

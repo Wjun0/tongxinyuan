@@ -61,6 +61,7 @@ def get_response_data(queryset):
       item['u_id'] = i.u_id
       item['phone'] = user_dic.get(i.user_id,{}).get('phone', '')
       item['user_id'] = i.user_id
+      item['is_finish'] = i.is_finish
       item['user_name'] = user_dic.get(i.user_id,{}).get('user_name', '')
       item['user_create_time'] = user_dic.get(i.user_id,{}).get('create_time', '')
       item['title'] = qt_dic.get(i.qt_id, {}).get('title', '')
