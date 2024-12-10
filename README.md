@@ -10,3 +10,7 @@ update tong_question_tmp set qt_type="文本题";
 
 ALTER TABLE `tong-psy`.`tong_user_answer_tmp` 
 ADD COLUMN `is_finish` varchar(32) NULL AFTER `result`;
+ALTER TABLE `tong-psy`.`tong_user_answer` 
+ADD COLUMN `is_finish` varchar(32) NULL AFTER `result`;
+
+wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz

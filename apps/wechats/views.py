@@ -2,6 +2,7 @@ import base64
 import logging
 import os
 import re
+import subprocess
 import time
 import uuid
 from datetime import datetime
@@ -454,14 +455,35 @@ class UploadView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         file = request.data.get("file")
+
+        import logging
+        LOG = logging.getLogger('log')
+        LOG.info(f"{time.asctime()} start upload file {file.name}")
+
         file_name = file.name
         file_type = file_name.split('.')[-1]
         if file_type not in ["mp4", "flv", "avi", "mov", "m4a", "mp3", "wav", "ogg", "asf", "au", "voc", "aiff", "rm", "svcd", "vcd"]:
             return Response({"detail": "fail", "data": "不支持的文件类型！"})
         uid = str(uuid.uuid4())
         file_id = f"{uid}.{file_type}"
-        Image.objects.create(file_id=file_id, file_name=file_name, source="media_data")
+        m3u8 = f"{uid}.m3u8"
+        Image.objects.create(file_id=file_id, file_name=file_name, m3u8=m3u8, source="media_data")
         with open(os.path.join(settings.BASE_DIR, "media", "media_data", file_id), 'wb')as f:
             f.write(file.read())
+
+        old_path = os.path.join(settings.BASE_DIR, "media", "media_data", file_id)
+        m3u8_path = os.path.join(settings.BASE_DIR, "media", "media_data", m3u8)
+        cmd = f'ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
+        # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
+        result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            cmd = f'ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
+            # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
+            result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode != 0:
+                LOG.error(f"{time.asctime()} fail upload file {file.name} \r {result.stderr}")
+                return Response({"detail": "fail", "data": "文件上传失败！"})
+
+        LOG.info(f"{time.asctime()} end upload file {file.name}")
         return Response({"detail": "success", "data": {"file_id": file_id, "file_name": file_name}})
 

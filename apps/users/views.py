@@ -37,6 +37,7 @@ from .utils import token_to_name, count_checking_user, check_user_name_pass, che
     check_pwd_pass, count_checking_question, count_checking_channel
 from ..questions.models import QuestionType, Question, Option
 from ..wechats.models import UserAnswer
+from apps.questions.models import Image
 
 
 class RegisterAPIView(CreateAPIView):
@@ -856,6 +857,15 @@ class DownloadQrcodeView(APIView):
             response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(path)
             return response
 
+class GetM3u8View(APIView):
+    permission_classes = (isManagementPermission,)
+    def get(self, request, *args, **kwargs):
+        file_id = request.query_params.get("file_id")
+        obj = Image.objects.filter(file_id=file_id, source="media_data").first()
+        if obj:
+            return Response({"m3u8_id": obj.m3u8})
+        return Response({"detail": "文件不存在！"}, status=400)
+
 class DownloadUserMedia(APIView):
     permission_classes = (isManagementPermission,)
 
@@ -863,6 +873,14 @@ class DownloadUserMedia(APIView):
         file_id = request.query_params.get("file_id")
         from apps.users.strem_view import play_user_media
         return play_user_media(request, file_id)
+
+class M3u8View(APIView):
+    permission_classes = (isManagementPermission,)
+
+    def get(self, request, *args, **kwargs):
+        file_id = kwargs.get('file_id','')
+        from apps.users.strem_view import play_m3u8
+        return play_m3u8(file_id)
 
 
 class ChechUserAPIView(APIView):

@@ -20,7 +20,8 @@ urlpatterns = [
     path('download/<file_id>/', strem_view.play_media),               # 下载音频|视频
     path('play/<file_id>/', strem_view.stream_video),                     # 下载音频|视频
     #path('play/<file_id>/', strem_view.play_media),                     # 下载音频|视频
-    path('download_user_media/', views.DownloadUserMedia.as_view()), # 下载播放用户回答的问题
+    path('get_m3u8/', views.GetM3u8View.as_view()),                  # file_id 换取m3u8
+    path('download_user_m3u8/<file_id>', views.M3u8View.as_view()),  # 下载播放用户回答的问题
 
     path('download_tmp/<file_id>/', strem_view.PCstream_video),          # 下载音频|视频
     path('PCdownload/<file_id>/', strem_view.PCstream_video),            # 前端播放

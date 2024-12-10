@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-ryzyi3_9d5y)3qdiubio8fkuaqknxd32rz7&srp%l6=gr69%-z
 DEBUG = False
 APPEND_SLASH=False
 
-ALLOWED_HOSTS = ["127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 # WX_APPID = os.environ.get("APPID")      # 申请的微信appid

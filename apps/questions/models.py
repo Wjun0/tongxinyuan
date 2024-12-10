@@ -253,6 +253,7 @@ class Image(models.Model):
     id = models.AutoField(primary_key=True)
     file_id = models.CharField(max_length=128, default='', verbose_name="文件id")
     file_name = models.CharField(max_length=128, default='', verbose_name="文件名称")
+    m3u8 = models.CharField(max_length=128, default='', verbose_name="m3u8文件名")
     source = models.CharField(max_length=128, default='', verbose_name="来源")
 
     class Meta:

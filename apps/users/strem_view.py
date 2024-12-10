@@ -205,3 +205,19 @@ def play_user_media(request, file_id):
         # return ajax.ajax_template(request, '1.html', {'url': url})
     resp['Accept-Ranges'] = 'bytes'
     return resp
+
+
+def play_m3u8(file_id):
+    try:
+        filename = f"media/media_data/{file_id}"
+        all_path = os.path.join(settings.BASE_DIR, filename)
+        with open(all_path, 'rb') as f:
+            content = f.read()
+        if filename.endswith('.m3u8'):
+            return HttpResponse(content, content_type='application/vnd.apple.mpegurl')
+        elif filename.endswith('.ts'):
+            return HttpResponse(content, content_type='video/MP2T')
+        else:
+            return HttpResponse(content, content_type='application/octet-stream')
+    except Exception as e:
+        return HttpResponse('文件不存在', status=404)
