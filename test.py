@@ -1,4 +1,11 @@
 import time
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tong-psy.fat_settings')
+import django
+django.setup()
+from apps.questions.models import Image
+
+
 
 def test_ffmpeg():
     mp4 = "C:\\Users\\18212\\Desktop\\code\\tong-psy\\11.mp4"
@@ -36,7 +43,6 @@ def update_m3u8():
         uid, type = i.split('.')
         old_path = os.path.join(base_dir, "media", "media_data", i)
         m3u8_path = os.path.join(base_dir, "media", "media_data", uid +'.m3u8')
-        type = 'h264_mp4toannexb'
 
         cmd = f'ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
         # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
@@ -54,12 +60,18 @@ def update_m3u8():
         else:
             print('success')
 
+def update_mysql_m3u8():
+    objs = Image.objects.filter(source='media_data')
+    for i in objs:
+        uid, type = i.file_id.split('.')
+        i.m3u8 = uid + '.m3u8'
+        i.save()
 
 
 if __name__ == '__main__':
     # test_ffmpeg()
-    update_m3u8()
-
+    # update_m3u8()  # 测试已更新
+    update_mysql_m3u8()  # 测试已更新
 
 
 

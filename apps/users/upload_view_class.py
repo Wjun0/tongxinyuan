@@ -1,11 +1,15 @@
 import os
 import shutil
+import subprocess
+import time
 
+from django.conf import settings
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from apps.users.models import Document
 from apps.users.permission import isManagementPermission
-
+import logging
+LOG = logging.getLogger('log')
 
 class IndexUploadView(CreateAPIView):
     permission_classes = (isManagementPermission, )
@@ -17,9 +21,8 @@ class IndexUploadView(CreateAPIView):
         real_file_name = upload_file._name
         print("===========")
         print(real_file_name)
-        if real_file_name.split('.')[-1] not in ["mp4", "flv", "avi", "mov",
-                                                "mp3", "wav", "ogg", "asf", "au", "voc", "aiff"]:
-            return Response({"detail": "不支持该文件类型！"}, status=400)
+        if real_file_name.split('.')[-1] not in ["mp4", "mp3"]:
+            return Response({"detail": "仅支持上传mp3和mp4格式！"}, status=400)
         chunk = request.POST.get('chunk', 0)
         print("分片上传", chunk)
         filename = './media/file/%s%s' % (task, chunk)
@@ -66,13 +69,27 @@ class SuccessUploadView(CreateAPIView):
                     break
                 chunk += 1
             target_file.close()
-            import uuid
-            file_id = str(uuid.uuid4())
-            new_name = file_id + '.' + name.split('.')[-1]
-            mymovefile("./media/file/%s" % name, "./media/qrcode/%s" % new_name)
-            # 把路径储存入数据库中
-            Document.objects.create(docfile= file_id, filename=new_name)
-            return Response({"message": "success", "file_id": file_id})
+        import uuid
+        file_id = str(uuid.uuid4())
+        new_name = file_id + '.' + name.split('.')[-1]
+        mymovefile("./media/file/%s" % name, "./media/qrcode/%s" % new_name)
+        m3u8_name = file_id + '.m3u8'
+        old_path = os.path.join(settings.BASE_DIR, "media", "qrcode", new_name)
+        m3u8_path = os.path.join(settings.BASE_DIR, "media", "qrcode", m3u8_name)
+        cmd = f'ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
+        # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
+        result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            cmd = f'ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
+            # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
+            result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode != 0:
+                LOG.error(f"{time.asctime()} fail upload file {new_name} \r {result.stderr}")
+                return Response({"detail": "fail", "data": "文件上传失败！"})
+
+        # 把路径储存入数据库中
+        Document.objects.create(docfile=m3u8_name, filename=new_name)
+        return Response({"message": "success", "file_id": m3u8_name})
 
 #移动文件到新文件路径
 def mymovefile(srcfile, dstfile):
