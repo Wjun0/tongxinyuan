@@ -4,16 +4,33 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tong-psy.fat_settings')
 import django
 django.setup()
 from apps.questions.models import Image
+import ffmpeg
+import json
 
+def get_video_codec(file_path):
+    # 定义一个函数，接收一个文件路径作为参数
+    try:
+        # 使用ffmpeg.probe获取视频文件的信息
+        probe = ffmpeg.probe(file_path)
+        # 从返回的数据中提取视频编码格式
+        video_streams = probe['streams']
+        for stream in video_streams:
+            return stream['codec_name']
+            # if stream['codec_type'] == 'video':
+            #     return stream['codec_name']  # 返回编码格式
+    except ffmpeg.Error as e:
+        print(f"An error occurred: {e}")  # 捕获并打印错误
+    return None  # 如果没有找到，返回None
 
 
 def test_ffmpeg():
-    mp4 = "C:\\Users\\18212\\Desktop\\code\\tong-psy\\11.mp4"
-    m3u8 = "C:\\Users\\18212\\Desktop\\code\\tong-psy\\11.m3u8"
-
-    cmd1 = "D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -version"
-    cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {mp4} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8}'
     import subprocess
+    old_path = "C:\\Users\\18212\\Desktop\\code\\tong-psy\\111.mp4"
+    m3u8_path = "C:\\Users\\18212\\Desktop\\code\\tong-psy\\13.m3u8"
+
+    ffmpeg = "D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg"
+    cmd = f'{ffmpeg} -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 50  {m3u8_path}'
+
     result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
         print('Error:', result.stderr)
@@ -69,9 +86,11 @@ def update_mysql_m3u8():
 
 
 if __name__ == '__main__':
-    # test_ffmpeg()
+    s = "ssss.mp4"
+    a,b = s.split('.')
+    test_ffmpeg()
     # update_m3u8()  # 测试已更新
-    update_mysql_m3u8()  # 测试已更新
+    # update_mysql_m3u8()  # 测试已更新
 
 
 

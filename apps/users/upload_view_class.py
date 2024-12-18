@@ -76,20 +76,20 @@ class SuccessUploadView(CreateAPIView):
         m3u8_name = file_id + '.m3u8'
         old_path = os.path.join(settings.BASE_DIR, "media", "qrcode", new_name)
         m3u8_path = os.path.join(settings.BASE_DIR, "media", "qrcode", m3u8_name)
-        cmd = f'ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
+        cmd = f'ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_list_size 0 -hls_time 10 {m3u8_path}'
         # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode != 0:
-            cmd = f'ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
-            # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
+            cmd = f'ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_list_size 0 -hls_time 10 {m3u8_path}'
+            # # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
             result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode != 0:
                 LOG.error(f"{time.asctime()} fail upload file {new_name} \r {result.stderr}")
-                return Response({"detail": "fail", "data": "文件上传失败！"})
+                return Response({"detail": "不支持该编码格式的文件，请重新上传其他文件！", "data": "文件上传失败！"},status=400)
 
         # 把路径储存入数据库中
-        Document.objects.create(docfile=m3u8_name, filename=new_name)
-        return Response({"message": "success", "file_id": m3u8_name})
+        Document.objects.create(docfile=file_id, filename=new_name, m3u8=m3u8_name)
+        return Response({"message": "success", "file_id": file_id})
 
 #移动文件到新文件路径
 def mymovefile(srcfile, dstfile):

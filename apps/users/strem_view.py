@@ -176,10 +176,11 @@ def play_media(request, file_id):
         # return HttpResponse(get_url_response(f.original_url))
         return HttpResponseRedirect(f.original_url)
     ############
-    url = settings.DOMAIN + "/user/play/" + file_id
-    doc = Document.objects.filter(docfile=file_id).first()
-    file_name =  doc.filename
-    if file_name.endswith('mp4'):
+    doc = Document.objects.filter(m3u8=f.path).first()
+    if not doc:
+        return render(request, 'error.html', context={"message": "页面不存在"})
+    url = settings.DOMAIN + "/user/play/" + f.path
+    if doc.filename.endswith('mp4'):
         return render(request, 'play_media.html', context={"url": url})
     else:
         return render(request, 'audio.html', context={"url": url})

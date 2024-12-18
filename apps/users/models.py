@@ -71,6 +71,7 @@ class Document(models.Model):
     filename=models.CharField(max_length=200)
     #docfile = models.FileField(upload_to='documents/%Y/%m/%d')
     docfile = models.CharField(max_length=200)
+    m3u8 = models.CharField(max_length=200)
     # file = models.FileField(upload_to='')
     def __str__(self):
         #list_display = ('id', 'title', 'content')

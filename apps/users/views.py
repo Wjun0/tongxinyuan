@@ -597,16 +597,6 @@ class UserLoginAPIView(CreateAPIView):
 class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
     permission_classes = (isManagementPermission, )
 
-    @swagger_auto_schema(
-        operation_summary="上传视频文件",
-        # operation_description="",
-        request_body=Schema(
-            type=TYPE_OBJECT,
-            properties={
-                'file': Schema(type=TYPE_OBJECT),
-            },
-        ),
-    )
     def post(self, request, *args, **kwargs):
         file_id = request.data.get("file_id")
         logo = request.data.get("logo")
@@ -640,12 +630,12 @@ class UploadMedioAPIView(CreateAPIView, UpdateAPIView):
         try:
             now = datetime.datetime.now()
             if str(time_limite) == "1":
-                cre = Media.objects.create(title=title, type=type, name=f_name, path=f.filename, file_id=f.docfile,
+                cre = Media.objects.create(title=title, type=type, name=f_name, path=f.m3u8, file_id=f.docfile,
                                            user=u_name, create_time=now, update_time=now,
                                            logo_id=uid, logo_name=logo_path, time_limite=time_limite,
                                            start_time=start_time, end_time=end_time, desc=desc)
             else:
-                cre = Media.objects.create(title=title, type=type, name=f_name, path=f.filename, user=u_name,
+                cre = Media.objects.create(title=title, type=type, name=f_name, path=f.m3u8, user=u_name,
                                            logo_id=uid, logo_name=logo_path, file_id=f.docfile, time_limite=time_limite,
                                            desc=desc, create_time=now, update_time=now)
             return Response({"detail": "success", "url": settings.DOMAIN + "/user/download/" + file_id})
@@ -955,16 +945,18 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
         new_file_id  = data.get('new_file_id', '')
         obj = self.get_queryset().filter(file_id=file_id).first()
         if not obj:
-            return Response({"detail": "File not found."}, status=404)
+            return Response({"detail": "文件不存在！"}, status=404)
         if user_is_operator(request):  # 如果是运营人员，判断是否有权限
             if not operator_change_data(request, obj):
                 return Response({"detail": "没有权限操作该数据！"}, status=403)
         f = Document.objects.filter(docfile=new_file_id).first()
         if not f:
-            return Response({"detail": "不支持的new_file_id"}, status=400)
+            return Response({"detail": "更新文件不存在！"}, status=400)
+        type = f.filename.split('.')[-1]
         try:
             obj.name = f.filename
-            obj.path = f.filename
+            obj.path = f.m3u8
+            obj.type = type
             obj.update_time = timezone.now()
             if str(time_limite) == "1":
                 obj.time_limite = time_limite
@@ -996,7 +988,7 @@ class MediaDetailAPIView(ListAPIView, CreateAPIView, UpdateAPIView):
                 d = Document.objects.filter(docfile=new_file_id).first()
                 if not d:
                     return Response({"detail": "New File not found."}, status=404)
-                obj.path = d.filename
+                obj.path = d.m3u8
                 obj.update_time = datetime.datetime.now()
                 obj.save()
                 return Response({"detail": "success"})

@@ -473,16 +473,16 @@ class UploadView(CreateAPIView):
 
         old_path = os.path.join(settings.BASE_DIR, "media", "media_data", file_id)
         m3u8_path = os.path.join(settings.BASE_DIR, "media", "media_data", m3u8)
-        cmd = f'ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
+        cmd = f'ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_list_size 0 -hls_time 10 {m3u8_path}'
         # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v h264_mp4toannexb -hls_time 5  {m3u8_path}'
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode != 0:
-            cmd = f'ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
-            # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
+            cmd = f'ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_list_size 0 -hls_time 10 {m3u8_path}'
+            # # cmd = f'D:\\ffmpeg-7.0.2-full_build-shared\\bin\\ffmpeg -i {old_path} -c copy -bsf:v hevc_mp4toannexb -hls_time 5  {m3u8_path}'
             result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode != 0:
-                LOG.error(f"{time.asctime()} fail upload file {file.name} \r {result.stderr}")
-                return Response({"detail": "fail", "data": "文件上传失败！"})
+                LOG.error(f"{time.asctime()} fail upload file {file_id} \r {result.stderr}")
+                return Response({"detail": "不支持该编码格式的文件，请重新上传其他文件！", "data": "文件上传失败！"}, status=400)
 
         LOG.info(f"{time.asctime()} end upload file {file.name}")
         return Response({"detail": "success", "data": {"file_id": file_id, "file_name": file_name}})
