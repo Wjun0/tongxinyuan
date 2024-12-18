@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同心理心苑</title>
+</head>
+<body>
+    <audio id="audio-player" controls preload="auto" data-setup='{}' style='width: 100%; margin-top: 200px'></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+        var video = document.getElementById('audio-player');
+        if (Hls.isSupported()) {
+            var hls = new Hls();
+            hls.loadSource('{{ url }}'); // 替换为你的HLS音频流URL
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play();
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = '{{ url }}'; // Safari支持原生HLS
+            video.addEventListener('canplay', function() {
+                video.play();
+            });
+        } else {
+            console.error('Your browser does not support HLS.');
+        }
+    </script>
+</body>
+</html>

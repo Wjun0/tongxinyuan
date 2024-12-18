@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同心理心苑</title>
+    <style>
+        body{
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <audio id="audio-player" controls preload="auto" data-setup='{}' style='width: 100%;max-width: 600px;transform: translateY(-50%)'></audio>
+{#    <audio id="audio-player" controls preload="auto" data-setup='{}' style='width: 100%;max-width: 600px;'></audio>#}
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+        var video = document.getElementById('audio-player');
+        if (Hls.isSupported()) {
+            var hls = new Hls();
+            hls.loadSource('{{ url }}'); // 替换为你的HLS音频流URL
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play();
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = '{{ url }}'; // Safari支持原生HLS
+            // 设置语音静音
+            video.muted = true;
+            video.autoplay = true;
+            setTimeout(() => {
+                video.autoplay = false
+                // 把静音关闭
+                video.muted = false
+            }, 500);
+            // 注册loadedmetadata中获取总时长
+            video.addEventListener('loadedmetadata',() => {
+                const totalTime = video.duration || 0
+                alert(`总时长${totalTime}`)
+            });
+        } else {
+            console.error('Your browser does not support HLS.');
+        }
+    </script>
+</body>
+</html>
