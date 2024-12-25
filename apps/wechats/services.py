@@ -13,7 +13,7 @@ from apps.wechats.models import UserAnswer, UserShow_number, UserAnswer_tmp, Ord
 
 format_dic = {"大于": ">", "大于或等于": ">=",
               "小于": "<", "小于或等于": "<=",
-              "等于": "=", "不等于": "!="}
+              "等于": "==", "不等于": "!="}
 
 def check_age(qt_id, min_age_max_age, answer):
     q = Question.objects.filter(qt_id=qt_id, q_attr="年龄题").first()
