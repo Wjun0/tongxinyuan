@@ -25,8 +25,9 @@ urlpatterns = [
 
     path('get_m3u8/', views.GetM3u8View.as_view()),                  # file_id 换取m3u8
     path('download_user_m3u8/<file_id>', views.M3u8View.as_view()),  # 下载播放用户回答的问题 m3u8/ts
+    path('download_user_media/<file_id>', views.DownloadUserMedia.as_view()),  # 下载文件 range
 
-    path('PCdownload/<file_id>/', strem_view.PCstream_video),            # 前端播放
+    path('PCdownload/<file_id>', views.PCstream_video_View.as_view()),            # 前端播放二维码音视频
     path('download_logo/<logo_id>/', views.DownloadLogoView.as_view()),    # 下载logo
     path('download_qrcode/<qrcode_id>/', views.DownloadQrcodeView.as_view()),    # 下载二维码
     re_path(r'^mediaList/$', views.MediaListAPIView.as_view()),             # 返回上传文件列表

@@ -115,25 +115,15 @@ def verify(token):
         return False
 
 def PCstream_video(request, file_id):
-    # token = request.META.get('HTTP_AUTHORIZATION')
-    # if not verify(token):
-    #     return render(request, 'error.html', context={"message": "认证信息未提供！"})
-    # f = Media.objects.filter(file_id=file_id).first()
-    # if not f:
-    #     # return HttpResponse('页面不存在', status=404)
-    #     return render(request, 'error.html', context={"message": "页面不存在"})
-    # if f.type == "url":
-    #     # return HttpResponse(get_url_response(f.original_url))
-    #     return HttpResponseRedirect(f.original_url)
-    f = Document.objects.filter(docfile=file_id).first()
+    f = Document.objects.filter(m3u8=file_id).first()
     if not f:
         return HttpResponse('页面不存在', status=404)
     ############
     filename = f"media/qrcode/{f.filename}"
     video_path = os.path.join(settings.BASE_DIR, filename)
     """将视频文件以流媒体的方式响应"""
-    range_header = request.META.get('HTTP_RANGE', '').strip()
-    range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
+    range_header = request.META.get('HTTP_CONTENT_RANGE', '').strip()
+    range_re = re.compile(r'bytes\s* \s*(\d+)\s*-\s*(\d*)', re.I)
     range_match = range_re.match(range_header)
     size = os.path.getsize(video_path)
     content_type, encoding = mimetypes.guess_type(video_path)
@@ -152,9 +142,6 @@ def PCstream_video(request, file_id):
         # 不是以视频流方式的获取时，以生成器方式返回整个文件，节省内存
         resp = StreamingHttpResponse(FileWrapper(open(video_path, 'rb')), content_type=content_type)
         resp['Content-Length'] = str(size)
-        # url = settings.DOMAIN + "/user/download/" + file_id + "/"
-        # return ajax.ajax_template(request, 'download_media.html', {'url': url})
-        # return ajax.ajax_template(request, '1.html', {'url': url})
     resp['Accept-Ranges'] = 'bytes'
     return resp
 
@@ -189,7 +176,7 @@ def play_media(request, file_id):
 
 
 def play_user_media(request, file_id):
-    f = Image.objects.filter(file_id=file_id, source="media_data").first()
+    f = Image.objects.filter(m3u8=file_id, source="media_data").first()
     # f = Document.objects.filter(docfile=file_id).first()
     if not f:
         return HttpResponse('页面不存在', status=404)
@@ -197,8 +184,8 @@ def play_user_media(request, file_id):
     filename = f"media/media_data/{f.file_id}"
     video_path = os.path.join(settings.BASE_DIR, filename)
     """将视频文件以流媒体的方式响应"""
-    range_header = request.META.get('HTTP_RANGE', '').strip()
-    range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
+    range_header = request.META.get('HTTP_CONTENT_RANGE', '').strip()
+    range_re = re.compile(r'bytes\s* \s*(\d+)\s*-\s*(\d*)', re.I)
     range_match = range_re.match(range_header)
     size = os.path.getsize(video_path)
     content_type, encoding = mimetypes.guess_type(video_path)
@@ -218,9 +205,6 @@ def play_user_media(request, file_id):
         # 不是以视频流方式的获取时，以生成器方式返回整个文件，节省内存
         resp = StreamingHttpResponse(FileWrapper(open(video_path, 'rb')), content_type=content_type)
         resp['Content-Length'] = str(size)
-        # url = settings.DOMAIN + "/user/download/" + file_id + "/"
-        # return ajax.ajax_template(request, 'download_media.html', {'url': url})
-        # return ajax.ajax_template(request, '1.html', {'url': url})
     resp['Accept-Ranges'] = 'bytes'
     return resp
 

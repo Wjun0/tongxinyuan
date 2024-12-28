@@ -1,14 +1,14 @@
 import random
 import requests
-# domain = "http://127.0.0.1:8081"
-# headers = {
-#     "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdWR0xma21IeUNWYUIyNEt1QWl0NjZJIiwiaWF0IjoxNzI2MTQzMzM5LjE0OTM0Nzh9fQ.xDYEe8G1kiVTOHkxtViNFGmgbomB1lkNoa8cxuu8wVk"}
-
-
-domain = "https://api.uat.tong-psy.com"
+domain = "http://127.0.0.1:8081"
 headers = {
-    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdlZGZRcUdzYVBsemZhbEhXWTdGcUZvIiwiaWF0IjoxNzMxODM0NDQ4LjM3MDU4NTd9fQ.qn659L89NO9-jfybHM6-dg57Q7TgFi694kQq93LJURw"
-}
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdlZGZRcUdzYVBsemZhbEhXWTdGcUZvIiwiaWF0IjoxNzM1MTMyMjgwLjE1MjI0OX19.WKReW7JSQxufmPa1ZZ1SvMMhKzDg2gHDdfLewxCO2UI"}
+
+
+# domain = "https://api.uat.tong-psy.com"
+# headers = {
+#     "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXJfaWQiOiJvZFljcDdlZGZRcUdzYVBsemZhbEhXWTdGcUZvIiwiaWF0IjoxNzMxODM0NDQ4LjM3MDU4NTd9fQ.qn659L89NO9-jfybHM6-dg57Q7TgFi694kQq93LJURw"
+# }
 
 def _get_question(data):
     url = f"{domain}/wechat/v1/get_question/"
@@ -87,6 +87,6 @@ def test_answer(qt_id):
 
 
 if __name__ == '__main__':
-    test_answer('eebfa943-031a-4bbc-863a-309e3a4c37b8')
+    test_answer('cdaaaf26-1702-4ee7-8c81-d6533eea2faf')
     # test_answer('f885407b-db0b-475e-a026-38ebe7c7c0c2')
     # test_answer('55642b1e-1b29-487a-aafd-557ffdf3d088')

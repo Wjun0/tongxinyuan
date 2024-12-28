@@ -33,6 +33,7 @@ from django.http import HttpResponse
 from qrcode import make as qrcode_make
 
 from .servers import filter_queryset, get_response_data
+from .strem_view import PCstream_video
 from .utils import token_to_name, count_checking_user, check_user_name_pass, check_name_pass, check_email_pass, \
     check_pwd_pass, count_checking_question, count_checking_channel
 from ..questions.models import QuestionType, Question, Option
@@ -812,6 +813,14 @@ class QRcodeurlView(APIView):
             response['Content-Disposition'] = 'attachment; filename=' + f.name
             return response
 
+class PCstream_video_View(ListAPIView):
+    permission_classes = (isManagementPermission,)
+    queryset = Media.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        file_id = kwargs.get('file_id', '')
+        return PCstream_video(request, file_id)
+
 class DownloadLogoView(APIView):
     # permission_classes = (idAdminAndCheckerPermission,)
 
@@ -860,7 +869,7 @@ class DownloadUserMedia(APIView):
     permission_classes = (isManagementPermission,)
 
     def get(self, request, *args, **kwargs):
-        file_id = request.query_params.get("file_id")
+        file_id = kwargs.get("file_id")
         from apps.users.strem_view import play_user_media
         return play_user_media(request, file_id)
 
