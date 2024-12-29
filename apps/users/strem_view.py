@@ -131,7 +131,8 @@ def PCstream_video(request, file_id):
     if range_match:
         first_byte, last_byte = range_match.groups()
         first_byte = int(first_byte) if first_byte else 0
-        last_byte = first_byte + 1024 * 1024 * 2  # 2M 每片,响应体最大体积
+        # last_byte = first_byte + 1024 * 1024 * 2  # 2M 每片,响应体最大体积
+        last_byte = int(last_byte) if last_byte else 10
         if last_byte >= size:
             last_byte = size - 1
         length = last_byte - first_byte + 1
@@ -193,7 +194,8 @@ def play_user_media(request, file_id):
     if range_match:
         first_byte, last_byte = range_match.groups()
         first_byte = int(first_byte) if first_byte else 0
-        last_byte = first_byte + 1024 * 1024 * 2  # 2M 每片,响应体最大体积
+        # last_byte = first_byte + 1024 * 1024 * 2  # 2M 每片,响应体最大体积
+        last_byte = int(last_byte) if last_byte else 100
         if last_byte >= size:
             last_byte = size - 1
         length = last_byte - first_byte + 1
